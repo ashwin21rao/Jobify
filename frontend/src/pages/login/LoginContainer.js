@@ -1,7 +1,7 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Grid from "@material-ui/core/Grid";
-import LoginForm from "./LoginForm";
+import Paper from "@material-ui/core/Paper";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -21,6 +21,11 @@ const useStyles = makeStyles((theme) => ({
     fontSize: "4rem",
     color: theme.palette.primary.dark,
   },
+
+  login__card: {
+    padding: "2rem",
+    paddingBottom: "1rem",
+  },
 }));
 
 function LoginContainer(props) {
@@ -36,7 +41,9 @@ function LoginContainer(props) {
       <Grid item xs={12} sm={9} md={6} lg={4}>
         <div className={classes.login__container}>
           <h1 className={classes.login__heading}>Jobify.</h1>
-          <LoginForm />
+          <Paper elevation={2} className={classes.login__card}>
+            {props.children}
+          </Paper>
         </div>
       </Grid>
     </Grid>
