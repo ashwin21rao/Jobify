@@ -1,7 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import CssBaseline from "@material-ui/core/CssBaseline";
-import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
+import { ThemeProvider } from "@material-ui/core/styles";
+import CustomMuiTheme from "../components/Muitheme";
 
 import LoginContainer from "../pages/login/LoginContainer";
 import LoginForm from "../pages/login/LoginForm";
@@ -17,20 +18,12 @@ import RecruiterProfile from "../pages/recruiter/Profile";
 import AddListing from "../pages/recruiter/AddListing";
 import JobSpecificApplications from "../pages/recruiter/JobSpecificApplications";
 
-const theme = createMuiTheme({
-  palette: {
-    background: {
-      default: "#f4f5fd",
-    },
-  },
-});
-
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={CustomMuiTheme}>
       <CssBaseline />
       <Router>
-        {/* <Switch>
+        <Switch>
           <Route path="/" exact>
             <LoginContainer>
               <LoginForm />
@@ -44,7 +37,7 @@ function App() {
           <Route path="/dashboard" exact component={ApplicantDashboard} />
           <Route path="/applications" exact component={MyApplications} />
           <Route path="/profile" exact component={ApplicantProfile} />
-        </Switch> */}
+        </Switch>
 
         <Switch>
           <Route path="/" exact>
