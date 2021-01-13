@@ -20,6 +20,7 @@ const LoginFormStyles = makeStyles((theme) => ({
   form__mode: {
     textAlign: "center",
     fontSize: "1.1rem",
+    fontWeight: "bold",
   },
 
   form__link: {

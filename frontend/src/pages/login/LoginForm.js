@@ -1,7 +1,8 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
-import useForm from "./../../components/useForm";
+import useForm from "./useForm";
 
 function LoginForm(props) {
   const {
@@ -53,13 +54,13 @@ function LoginForm(props) {
           </Button>
         </div>
         <div className={classes.form__group}>
-          <div className={classes.form__mode}>
-            <h4>
+          <div className={classes.form__group}>
+            <p className={classes.form__mode}>
               Don't have an account?{" "}
-              <a href="/signup" className={classes.form__link}>
+              <Link to="/signup" className={classes.form__link}>
                 Sign Up
-              </a>
-            </h4>
+              </Link>
+            </p>
           </div>
         </div>
       </div>

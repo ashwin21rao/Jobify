@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import {
@@ -7,7 +8,7 @@ import {
   Radio,
   RadioGroup,
 } from "@material-ui/core";
-import useForm from "../../components/useForm";
+import useForm from "./useForm";
 
 function SignupForm(props) {
   const {
@@ -99,14 +100,12 @@ function SignupForm(props) {
           </Button>
         </div>
         <div className={classes.form__group}>
-          <div className={classes.form__mode}>
-            <h4>
-              Have an account?{" "}
-              <a href="/" className={classes.form__link}>
-                Sign In
-              </a>
-            </h4>
-          </div>
+          <p className={classes.form__mode}>
+            Have an account?{" "}
+            <Link to="/" className={classes.form__link}>
+              Sign In
+            </Link>
+          </p>
         </div>
       </div>
     </form>
