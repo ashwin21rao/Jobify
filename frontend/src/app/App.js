@@ -23,7 +23,7 @@ function App() {
     <ThemeProvider theme={CustomMuiTheme}>
       <CssBaseline />
       <Router>
-        <Switch>
+        {/* <Switch>
           <Route path="/" exact>
             <LoginContainer>
               <LoginForm />
@@ -37,7 +37,7 @@ function App() {
           <Route path="/dashboard" exact component={ApplicantDashboard} />
           <Route path="/applications" exact component={MyApplications} />
           <Route path="/profile" exact component={ApplicantProfile} />
-        </Switch>
+        </Switch> */}
 
         <Switch>
           <Route path="/" exact>

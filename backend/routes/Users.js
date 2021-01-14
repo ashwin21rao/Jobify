@@ -1,54 +1,95 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/UserSchema");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// Login page
-router.post("/login", function (req, res) {
-  const { email, password } = req.body;
-  User.findOne({ email }, function (err, user) {
-    if (err) {
-      console.error(err);
-      res.status(500).json({
-        error: "Internal error",
-      });
-    } else if (!user) {
-      res.status(401).json({
-        error: "Incorrect email or password",
-      });
+require("dotenv").config();
+
+// Load input validation
+const validateSignup = require("../validation/Signup");
+const validateLogin = require("../validation/Login");
+
+// Load User model
+const User = require("../models/UserSchema");
+
+// Signup route
+router.post("/signup", (req, res) => {
+  const { errors, isValid } = validateSignup(req.body);
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
+  // check if user exists
+  User.findOne({ email: req.body.email }).then((user) => {
+    if (user) {
+      return res.status(400).json({ email: "Email already exists" });
     } else {
-      user.isCorrectPassword(password, function (err, same) {
-        if (err) {
-          res.status(500).json({
-            error: "Internal error",
-          });
-        } else if (!same) {
-          res.status(401).json({
-            error: "Incorrect email or password",
-          });
-        } else {
-          // Issue token
-          const payload = { email };
-          const token = jwt.sign(payload, secret, {
-            expiresIn: "1h",
-          });
-          res.cookie("token", token, { httpOnly: true }).sendStatus(200);
-        }
+      const newUser = new User({
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+        userType: req.body.userType,
+      });
+
+      // Hash password before saving in database
+      bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(newUser.password, salt, (err, hash) => {
+          if (err) throw err;
+          newUser.password = hash;
+          newUser
+            .save()
+            .then((user) => res.json(user))
+            .catch((err) => console.log(err));
+        });
       });
     }
   });
 });
 
-// Register page
-router.post("/signup", function (req, res) {
-  const { name, email, password, userType } = req.body;
-  const user = new User({ name, email, password, userType });
-  user.save(function (err) {
-    if (err) {
-      res.status(500).send("Error registering new user.");
-    } else {
-      res.status(200).send("Welcome to the club!");
+// login route (return JWT token)
+router.post("/login", (req, res) => {
+  const { errors, isValid } = validateLogin(req.body);
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
+  const email = req.body.email;
+  const password = req.body.password;
+
+  // Find user by email
+  User.findOne({ email }).then((user) => {
+    if (!user) {
+      return res.status(404).json({ emailnotfound: "Email not found" });
     }
+
+    // Check password
+    bcrypt.compare(password, user.password).then((isMatch) => {
+      if (isMatch) {
+        // Create JWT Payload
+        const payload = {
+          id: user.id,
+          name: user.name,
+        };
+        // Sign token
+        jwt.sign(
+          payload,
+          process.env.SECRET_TOKEN_KEY,
+          {
+            expiresIn: 86400, // 1 day in seconds
+          },
+          (err, token) => {
+            res.json({
+              success: true,
+              token: "Bearer " + token,
+            });
+          }
+        );
+      } else {
+        return res
+          .status(400)
+          .json({ passwordincorrect: "Incorrect password" });
+      }
+    });
   });
 });
 
