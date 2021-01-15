@@ -7,6 +7,9 @@ import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
 import ModalWindow from "../../components/ModalWindow";
 
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
+
 const jobs = [
   {
     title: "Software intern",
@@ -58,10 +61,22 @@ const jobs = [
 class ApplicantDashboard extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      authorized: true,
+    };
+  }
+
+  componentWillMount() {
+    // recruiter cannot view applicant pages
+    this.state.authorized = this.props.auth.user.userType === "applicant";
   }
 
   render() {
+    if (!this.state.authorized) {
+      this.props.history.goBack();
+      return <></>;
+    }
+
     return (
       <React.Fragment>
         <ApplicantNavbar />
@@ -219,4 +234,12 @@ class ApplicantDashboard extends Component {
   }
 }
 
-export default ApplicantDashboard;
+ApplicantDashboard.propTypes = {
+  auth: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+});
+
+export default connect(mapStateToProps)(ApplicantDashboard);

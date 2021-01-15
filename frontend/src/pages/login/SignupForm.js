@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Redirect, Link } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import { withStyles } from "@material-ui/core/styles";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
@@ -11,7 +11,10 @@ import {
 } from "@material-ui/core";
 import UseFormStyles from "./FormStyles";
 import CustomMuiTheme from "../../components/Muitheme";
-import axios from "axios";
+
+import PropTypes from "prop-types";
+import { connect } from "react-redux";
+import { signupUser } from "../../app/actions/authActions";
 
 class SignupForm extends Component {
   constructor(props) {
@@ -20,19 +23,43 @@ class SignupForm extends Component {
       name: "",
       email: "",
       password: "",
-      userType: "",
+      password2: "",
+      userType: "applicant",
+      errors: {},
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.errors) {
+      this.setState({
+        errors: nextProps.errors,
+      });
+    }
+  }
+
+  componentDidMount() {
+    // If logged in, go to dashboard directly
+    if (this.props.auth.isAuthenticated) {
+      this.props.history.push(`/${this.props.auth.user.userType}/dashboard`);
+    }
+  }
+
   handleSubmit = (e) => {
     e.preventDefault();
 
-    axios
-      .post("http://localhost:5000/signup", this.state)
-      .then((res) => console.log(res));
+    const newUser = {
+      name: this.state.name,
+      email: this.state.email,
+      password: this.state.password,
+      password2: this.state.password2,
+      userType: this.state.userType,
+    };
+
+    console.log(newUser);
+    this.props.signupUser(newUser, this.props.history);
   };
 
   handleInputChange = (e) => {
@@ -40,17 +67,12 @@ class SignupForm extends Component {
     this.setState({ [name]: value });
   };
 
-  componentDidMount() {
-    // axios.get("http://localhost:5000/signup").then(function (response) {
-    //   console.log(response.data);
-    // });
-  }
-
   render() {
     const { classes } = this.props;
+    const { errors } = this.state;
 
     return (
-      <form onSubmit={this.handleSubmit}>
+      <form noValidate onSubmit={this.handleSubmit}>
         <div className={classes.root}>
           <div className={classes.form__group}>
             <TextField
@@ -58,9 +80,12 @@ class SignupForm extends Component {
               label="Full Name"
               name="name"
               size="small"
+              type="text"
               required
               fullWidth={true}
               onChange={this.handleInputChange}
+              error={Boolean(errors.name)}
+              helperText={errors.name}
             ></TextField>
           </div>
           <div className={classes.form__group}>
@@ -73,6 +98,8 @@ class SignupForm extends Component {
               required
               fullWidth={true}
               onChange={this.handleInputChange}
+              error={Boolean(errors.email)}
+              helperText={errors.email}
             ></TextField>
           </div>
           <div className={classes.form__group}>
@@ -85,11 +112,32 @@ class SignupForm extends Component {
               required
               fullWidth={true}
               onChange={this.handleInputChange}
+              error={Boolean(errors.password)}
+              helperText={errors.password}
+            ></TextField>
+          </div>
+          <div className={classes.form__group}>
+            <TextField
+              variant="outlined"
+              label="Confirm Password"
+              name="password2"
+              size="small"
+              type="password"
+              required
+              fullWidth={true}
+              onChange={this.handleInputChange}
+              error={Boolean(errors.password2)}
+              helperText={errors.password2}
             ></TextField>
           </div>
           <div className={classes.form__group}>
             <FormControl>
-              <RadioGroup row name="userType" onChange={this.handleInputChange}>
+              <RadioGroup
+                row
+                name="userType"
+                defaultValue="applicant"
+                onChange={this.handleInputChange}
+              >
                 <FormControlLabel
                   control={<Radio color="primary" required />}
                   value="applicant"
@@ -128,4 +176,19 @@ class SignupForm extends Component {
   }
 }
 
-export default withStyles(UseFormStyles(CustomMuiTheme))(SignupForm);
+// export default withStyles(UseFormStyles(CustomMuiTheme))(SignupForm);
+
+SignupForm.propTypes = {
+  signupUser: PropTypes.func.isRequired,
+  auth: PropTypes.object.isRequired,
+  errors: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+  errors: state.errors,
+});
+
+export default connect(mapStateToProps, { signupUser })(
+  withRouter(withStyles(UseFormStyles(CustomMuiTheme))(SignupForm))
+);

@@ -6,6 +6,9 @@ import { Container, Row, Col } from "react-bootstrap/";
 import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
 
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
+
 const jobs = [
   {
     recruiterName: "Ashwin",
@@ -87,8 +90,9 @@ const jobs = [
 class RecruiterDashboard extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
-    this.navigateToApplications = this.navigateToApplications.bind(this);
+    this.state = {
+      authorized: true,
+    };
     this.passDataAndNavigate = this.passDataAndNavigate.bind(this);
   }
 
@@ -100,15 +104,17 @@ class RecruiterDashboard extends Component {
     });
   }
 
-  navigateToApplications(e, data) {
-    e.stopPropagation();
-    this.props.history.push({
-      pathname: "/applications",
-      jobData: data,
-    });
+  componentWillMount() {
+    // applicant cannot view recruiter pages
+    this.state.authorized = this.props.auth.user.userType === "recruiter";
   }
 
   render() {
+    if (!this.state.authorized) {
+      this.props.history.goBack();
+      return <></>;
+    }
+
     return (
       <React.Fragment>
         <RecruiterNavbar />
@@ -122,7 +128,11 @@ class RecruiterDashboard extends Component {
                 variant="success"
                 style={{ marginTop: "0.35rem" }}
                 onClick={(e) =>
-                  this.passDataAndNavigate(e, "/addlisting", undefined)
+                  this.passDataAndNavigate(
+                    e,
+                    "/recruiter/addlisting",
+                    undefined
+                  )
                 }
               >
                 Add New
@@ -153,7 +163,11 @@ class RecruiterDashboard extends Component {
                   {jobs.map((obj, i) => (
                     <tr
                       onClick={(e) =>
-                        this.passDataAndNavigate(e, "/applications", obj)
+                        this.passDataAndNavigate(
+                          e,
+                          "/recruiter/applications",
+                          obj
+                        )
                       }
                       style={{ cursor: "pointer" }}
                     >
@@ -175,7 +189,11 @@ class RecruiterDashboard extends Component {
                           type="submit"
                           className="mr-0 mr-lg-2 mb-2 mb-lg-0"
                           onClick={(e) =>
-                            this.passDataAndNavigate(e, "/addlisting", obj)
+                            this.passDataAndNavigate(
+                              e,
+                              "/recruiter/addlisting",
+                              obj
+                            )
                           }
                         >
                           Edit
@@ -201,4 +219,12 @@ class RecruiterDashboard extends Component {
   }
 }
 
-export default RecruiterDashboard;
+RecruiterDashboard.propTypes = {
+  auth: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+});
+
+export default connect(mapStateToProps)(RecruiterDashboard);

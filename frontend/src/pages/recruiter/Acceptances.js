@@ -7,6 +7,9 @@ import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
 import ModalWindow from "../../components/ModalWindow";
 
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
+
 const users = [
   {
     name: "Ashwin Rao",
@@ -160,10 +163,22 @@ const users = [
 class AcceptedEmployees extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      authorized: true,
+    };
+  }
+
+  componentWillMount() {
+    // applicant cannot view recruiter pages
+    this.state.authorized = this.props.auth.user.userType === "recruiter";
   }
 
   render() {
+    if (!this.state.authorized) {
+      this.props.history.goBack();
+      return <></>;
+    }
+
     return (
       <React.Fragment>
         <RecruiterNavbar />
@@ -256,4 +271,12 @@ class AcceptedEmployees extends Component {
   }
 }
 
-export default AcceptedEmployees;
+AcceptedEmployees.propTypes = {
+  auth: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+});
+
+export default connect(mapStateToProps)(AcceptedEmployees);

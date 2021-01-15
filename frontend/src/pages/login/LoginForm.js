@@ -1,11 +1,14 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import { withStyles } from "@material-ui/core/styles";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import UseFormStyles from "./FormStyles";
 import CustomMuiTheme from "../../components/Muitheme";
-import axios from "axios";
+
+import PropTypes from "prop-types";
+import { connect } from "react-redux";
+import { loginUser } from "../../app/actions/authActions";
 
 class LoginForm extends Component {
   constructor(props) {
@@ -13,15 +16,44 @@ class LoginForm extends Component {
     this.state = {
       email: "",
       password: "",
+      errors: {},
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.auth.isAuthenticated) {
+      console.log(nextProps.auth);
+
+      // go to dashboard after login
+      this.props.history.push(`/${nextProps.auth.user.userType}/dashboard`);
+    }
+    if (nextProps.errors) {
+      this.setState({
+        errors: nextProps.errors,
+      });
+    }
+  }
+
+  componentDidMount() {
+    // If logged in, go to dashboard directly
+    if (this.props.auth.isAuthenticated) {
+      this.props.history.push(`/${this.props.auth.user.userType}/dashboard`);
+    }
+  }
+
   handleSubmit = (e) => {
     e.preventDefault();
-    console.log(this.state);
+
+    const userData = {
+      email: this.state.email,
+      password: this.state.password,
+    };
+
+    console.log(userData);
+    this.props.loginUser(userData);
   };
 
   handleInputChange = (e) => {
@@ -29,17 +61,12 @@ class LoginForm extends Component {
     this.setState({ [name]: value });
   };
 
-  componentDidMount() {
-    axios.get("http://localhost:5000/login").then(function (response) {
-      console.log(response.data);
-    });
-  }
-
   render() {
     const { classes } = this.props;
+    const { errors } = this.state;
 
     return (
-      <form onSubmit={this.handleSubmit}>
+      <form noValidate onSubmit={this.handleSubmit}>
         <div className={classes.form__container}>
           <div className={classes.form__group}>
             <TextField
@@ -51,6 +78,8 @@ class LoginForm extends Component {
               required
               fullWidth={true}
               onChange={this.handleInputChange}
+              error={Boolean(errors.email) || Boolean(errors.emailnotfound)}
+              helperText={errors.email ?? errors.emailnotfound ?? ""}
             ></TextField>
           </div>
           <div className={classes.form__group}>
@@ -63,6 +92,10 @@ class LoginForm extends Component {
               required
               fullWidth={true}
               onChange={this.handleInputChange}
+              error={
+                Boolean(errors.password) || Boolean(errors.passwordincorrect)
+              }
+              helperText={errors.password ?? errors.passwordincorrect ?? ""}
             ></TextField>
           </div>
           <div className={classes.form__group}>
@@ -92,4 +125,17 @@ class LoginForm extends Component {
   }
 }
 
-export default withStyles(UseFormStyles(CustomMuiTheme))(LoginForm);
+LoginForm.propTypes = {
+  loginUser: PropTypes.func.isRequired,
+  auth: PropTypes.object.isRequired,
+  errors: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+  errors: state.errors,
+});
+
+export default connect(mapStateToProps, { loginUser })(
+  withRouter(withStyles(UseFormStyles(CustomMuiTheme))(LoginForm))
+);

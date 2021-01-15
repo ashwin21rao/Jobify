@@ -3,17 +3,31 @@ import ApplicantNavbar from "./Navbar";
 import Form from "react-bootstrap/Form";
 import { Container, Row, Col } from "react-bootstrap/";
 import Button from "react-bootstrap/Button";
-import ListGroup from "react-bootstrap/ListGroup";
 import MainHeading from "../../components/MainHeading";
+
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
 
 class AddListing extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      authorized: true,
+    };
+  }
+
+  componentWillMount() {
+    // applicant cannot view recruiter pages
+    this.state.authorized = this.props.auth.user.userType === "recruiter";
   }
 
   render() {
     const { jobData } = this.props.location;
+
+    if (!this.state.authorized) {
+      this.props.history.goBack();
+      return <></>;
+    }
 
     return (
       <React.Fragment>
@@ -154,4 +168,12 @@ class AddListing extends Component {
   }
 }
 
-export default AddListing;
+AddListing.propTypes = {
+  auth: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+});
+
+export default connect(mapStateToProps)(AddListing);

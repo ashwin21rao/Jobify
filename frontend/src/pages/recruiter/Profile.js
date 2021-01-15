@@ -5,6 +5,9 @@ import { Container, Row, Col } from "react-bootstrap/";
 import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
 
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
+
 const user = {
   name: "Ashwin Rao",
   email: "ashwin@gmail.com",
@@ -16,9 +19,22 @@ const user = {
 class RecruiterProfile extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      authorized: true,
+    };
   }
+
+  componentWillMount() {
+    // applicant cannot view recruiter pages
+    this.state.authorized = this.props.auth.user.userType === "recruiter";
+  }
+
   render() {
+    if (!this.state.authorized) {
+      this.props.history.goBack();
+      return <></>;
+    }
+
     return (
       <React.Fragment>
         <RecruiterNavbar />
@@ -79,4 +95,12 @@ class RecruiterProfile extends Component {
   }
 }
 
-export default RecruiterProfile;
+RecruiterProfile.propTypes = {
+  auth: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+});
+
+export default connect(mapStateToProps)(RecruiterProfile);

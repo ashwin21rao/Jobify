@@ -2,3 +2,13 @@
   background-color: #ffffff;
   box-shadow: 0 2px 3px -1px rgba(0, 0, 0, 0.3);
 }
+
+.navbar-custom .navbar-brand {
+  color: #648dae;
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+.navbar-custom .navbar-brand:hover {
+  color: #648dae;
+}

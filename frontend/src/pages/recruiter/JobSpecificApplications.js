@@ -6,6 +6,9 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
 
+import { connect } from "react-redux";
+import PropTypes from "prop-types";
+
 const users = [
   {
     name: "Ashwin Rao",
@@ -159,12 +162,24 @@ const users = [
 class JobSpecificApplications extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      authorized: true,
+    };
+  }
+
+  componentWillMount() {
+    // applicant cannot view recruiter pages
+    this.state.authorized = this.props.auth.user.userType === "recruiter";
   }
 
   render() {
     const { jobData } = this.props.location; // to get job applicants
     console.log(jobData);
+
+    if (!this.state.authorized) {
+      this.props.history.goBack();
+      return <></>;
+    }
 
     return (
       <React.Fragment>
@@ -246,4 +261,12 @@ class JobSpecificApplications extends Component {
   }
 }
 
-export default JobSpecificApplications;
+JobSpecificApplications.propTypes = {
+  auth: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+});
+
+export default connect(mapStateToProps)(JobSpecificApplications);
