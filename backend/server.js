@@ -32,7 +32,10 @@ require("./config/Passport")(passport);
 
 // routes
 app.use("/users", require("./routes/Users"));
-app.use("/applicant", require("./routes/Applicants"));
+app.use("/applicant/profile", require("./routes/applicant/Profile"));
+app.use("/recruiter/profile", require("./routes/recruiter/Profile"));
+app.use("/recruiter/joblisting", require("./routes/recruiter/JobListing"));
+app.use("/recruiter/dashboard", require("./routes/recruiter/Dashboard"));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, console.log(`Server started on port ${PORT}`));

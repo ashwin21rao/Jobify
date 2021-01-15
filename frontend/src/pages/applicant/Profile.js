@@ -10,30 +10,6 @@ import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import axios from "axios";
 
-const user = {
-  name: "Ashwin Rao",
-  email: "ashwin@gmail.com",
-  rating: 5,
-  skills: ["C", "C++", "Python"],
-  education: [
-    {
-      name: "IIIT",
-      startYear: 2019,
-      endYear: 2023,
-    },
-    {
-      name: "IIIT",
-      startYear: 2019,
-      endYear: 2023,
-    },
-    {
-      name: "IIIT",
-      startYear: 2019,
-      endYear: 2023,
-    },
-  ],
-};
-
 class ApplicantProfile extends Component {
   constructor(props) {
     super(props);
@@ -71,7 +47,6 @@ class ApplicantProfile extends Component {
     e.preventDefault();
     const { institute_name, start_year, end_year } = e.target.elements;
     const { user } = this.props.auth;
-    console.log(e.target.elements);
 
     axios
       .post("/applicant/profile/addeducation", {
@@ -96,11 +71,14 @@ class ApplicantProfile extends Component {
   removeEducation(e, education) {
     e.preventDefault();
     const { user } = this.props.auth;
+    const { institute_name, start_year, end_year } = education;
 
     axios
       .post("/applicant/profile/removeeducation", {
         user_id: user.id,
-        education_id: education._id,
+        institute_name,
+        start_year,
+        end_year,
       })
       .then((res) => {
         this.setState({ profileData: res.data });
@@ -246,25 +224,21 @@ class ApplicantProfile extends Component {
                   <Row>
                     <Col xs={12} sm={4} md="auto">
                       <Form.Group controlId="institute_name">
-                        <Form.Control
-                          placeholder="College Name"
-                          ref="institute_name"
-                          required
-                        />
+                        <Form.Control placeholder="College Name" required />
                       </Form.Group>
                     </Col>
                     <Col xs={12} sm={4} md="auto">
                       <Form.Group controlId="start_year">
                         <Form.Control
                           placeholder="Start Year"
-                          ref="start_year"
                           required
+                          type="number"
                         />
                       </Form.Group>
                     </Col>
                     <Col xs={12} sm={4} md="auto">
                       <Form.Group controlId="end_year">
-                        <Form.Control placeholder="End Year" ref="end_year" />
+                        <Form.Control placeholder="End Year" />
                       </Form.Group>
                     </Col>
                     <Col xs={12} sm="auto">
@@ -311,11 +285,7 @@ class ApplicantProfile extends Component {
                   <Row>
                     <Col xs={12} sm="auto">
                       <Form.Group controlId="skill">
-                        <Form.Control
-                          placeholder="Skill"
-                          ref="skill"
-                          required
-                        />
+                        <Form.Control placeholder="Skill" required />
                       </Form.Group>
                     </Col>
                     <Col xs={12} sm="auto">

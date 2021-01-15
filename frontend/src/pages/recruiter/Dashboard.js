@@ -5,95 +5,21 @@ import RecruiterNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
 import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
+import FormatDate from "../../components/FormatDate";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
-
-const jobs = [
-  {
-    recruiterName: "Ashwin",
-    recruiterEmail: "ashwin@gmail.com",
-    title: "Software intern",
-    company: "FCA",
-    dateOfPosting: Date.now(),
-    deadline: Date.now(),
-    maxApplicants: 10,
-    positionsAvailable: 5,
-    type: "full time",
-    duration: "23",
-    skills: ["C", "C++", "Python"],
-    salary: 10000,
-    rating: 5,
-  },
-  {
-    recruiterName: "Ashwin",
-    recruiterEmail: "ashwin@gmail.com",
-    title: "Software intern",
-    company: "FCA",
-    dateOfPosting: Date.now(),
-    deadline: Date.now(),
-    maxApplicants: 10,
-    positionsAvailable: 5,
-    type: "full time",
-    duration: "23",
-    skills: ["C", "C++", "Python"],
-    salary: 10000,
-    rating: 5,
-  },
-  {
-    recruiterName: "Ashwin",
-    recruiterEmail: "ashwin@gmail.com",
-    title: "Software intern",
-    company: "FCA",
-    dateOfPosting: Date.now(),
-    deadline: Date.now(),
-    maxApplicants: 10,
-    positionsAvailable: 5,
-    type: "full time",
-    duration: "23",
-    skills: ["C", "C++", "Python"],
-    salary: 10000,
-    rating: 5,
-  },
-  {
-    recruiterName: "Ashwin",
-    recruiterEmail: "ashwin@gmail.com",
-    title: "Software intern",
-    company: "FCA",
-    dateOfPosting: Date.now(),
-    deadline: Date.now(),
-    maxApplicants: 10,
-    positionsAvailable: 5,
-    type: "full time",
-    duration: "23",
-    skills: ["C", "C++", "Python"],
-    salary: 10000,
-    rating: 5,
-  },
-  {
-    recruiterName: "Ashwin",
-    recruiterEmail: "ashwin@gmail.com",
-    title: "Software intern",
-    company: "FCA",
-    dateOfPosting: Date.now(),
-    deadline: Date.now(),
-    maxApplicants: 10,
-    positionsAvailable: 5,
-    type: "full time",
-    duration: "23",
-    skills: ["C", "C++", "Python"],
-    salary: 10000,
-    rating: 5,
-  },
-];
+import axios from "axios";
 
 class RecruiterDashboard extends Component {
   constructor(props) {
     super(props);
     this.state = {
       authorized: true,
+      fetching: true,
     };
     this.passDataAndNavigate = this.passDataAndNavigate.bind(this);
+    this.removeJob = this.removeJob.bind(this);
   }
 
   passDataAndNavigate(e, path, data) {
@@ -109,10 +35,44 @@ class RecruiterDashboard extends Component {
     this.state.authorized = this.props.auth.user.userType === "recruiter";
   }
 
+  componentDidMount() {
+    const { user } = this.props.auth;
+    axios
+      .post("/recruiter/dashboard/load", { user_id: user.id })
+      .then((res) => {
+        this.setState({ jobData: res.data, fetching: false });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  removeJob(e, jobData) {
+    e.stopPropagation();
+    const { user } = this.props.auth;
+    console.log(user);
+    axios
+      .post("/recruiter/dashboard/removejob", {
+        user_id: user.id,
+        job_id: jobData._id,
+      })
+      .then((res) => {
+        console.log(res.data);
+        this.setState({ jobData: res.data, fetching: false });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
   render() {
     if (!this.state.authorized) {
       this.props.history.goBack();
       return <></>;
+    }
+
+    if (this.state.fetching) {
+      return <React.Fragment>Fetching data...</React.Fragment>;
     }
 
     return (
@@ -146,7 +106,6 @@ class RecruiterDashboard extends Component {
                   <tr>
                     <th>#</th>
                     <th>Title</th>
-                    <th>Company</th>
                     <th>Date of Posting</th>
                     <th>Deadline</th>
                     <th>Max Applicants</th>
@@ -160,7 +119,7 @@ class RecruiterDashboard extends Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {jobs.map((obj, i) => (
+                  {this.state.jobData.map((obj, i) => (
                     <tr
                       onClick={(e) =>
                         this.passDataAndNavigate(
@@ -173,12 +132,11 @@ class RecruiterDashboard extends Component {
                     >
                       <td>{i + 1}</td>
                       <td>{obj.title}</td>
-                      <td>{obj.company}</td>
-                      <td>{obj.dateOfPosting}</td>
-                      <td>{obj.deadline}</td>
-                      <td>{obj.maxApplicants}</td>
-                      <td>{obj.positionsAvailable}</td>
-                      <td>{obj.type}</td>
+                      <td>{FormatDate(new Date(obj.date_of_posting))}</td>
+                      <td>{FormatDate(new Date(obj.deadline))}</td>
+                      <td>{obj.max_applicants}</td>
+                      <td>{obj.positions_available}</td>
+                      <td>{obj.job_type}</td>
                       <td>{obj.duration}</td>
                       <td>{obj.skills.join(", ")}</td>
                       <td>{obj.salary}</td>
@@ -201,7 +159,7 @@ class RecruiterDashboard extends Component {
                         <Button
                           variant="outline-danger"
                           onClick={(e) => {
-                            e.stopPropagation();
+                            this.removeJob(e, obj);
                           }}
                         >
                           Delete

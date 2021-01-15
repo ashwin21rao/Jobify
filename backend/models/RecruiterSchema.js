@@ -17,14 +17,12 @@ const RecruiterSchema = new Schema({
   },
   phone_number: {
     type: String,
-    required: true,
   },
   bio: {
     type: String,
   },
   company: {
     type: String,
-    required: true,
   },
 });
 

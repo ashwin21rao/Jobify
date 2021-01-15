@@ -28,6 +28,7 @@ const ApplicantSchema = new Schema({
       end_year: {
         type: Number,
       },
+      _id: false,
     },
   ],
   skills: [

@@ -7,21 +7,16 @@ import MainHeading from "../../components/MainHeading";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
-
-const user = {
-  name: "Ashwin Rao",
-  email: "ashwin@gmail.com",
-  phoneNumber: "90023093423",
-  bio:
-    "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quasi, eum. Tempore ipsam, laudantium, voluptatibus perferendis aperiam quidem voluptatum exercitationem, ipsum ea corporis labore dignissimos itaque veniam excepturi deserunt sequi. Ut modi id rerum enim voluptas obcaecati alias et optio repudiandae itaque, quis amet laudantium aperiam vero illo ab quia impedit nemo non beatae adipisci aliquid qui laboriosam. Similique amet minus sed qui quas rem, animi, explicabo sunt ipsa corrupti dignissimos laborum ut accusamus atque laboriosam beatae fugit quo nostrum error eum voluptas asperiores laudantium. Sequi consequuntur, nisi dolorum aliquam dolor voluptates reiciendis ipsam culpa aperiam minima, qui optio praesentium nostrum.",
-};
+import axios from "axios";
 
 class RecruiterProfile extends Component {
   constructor(props) {
     super(props);
     this.state = {
       authorized: true,
+      fetching: true,
     };
+    this.updateProfile = this.updateProfile.bind(this);
   }
 
   componentWillMount() {
@@ -29,10 +24,49 @@ class RecruiterProfile extends Component {
     this.state.authorized = this.props.auth.user.userType === "recruiter";
   }
 
+  componentDidMount() {
+    // get recuiter profile
+    const { user } = this.props.auth;
+    axios
+      .post("/recruiter/profile/load", {
+        user_id: user.id,
+      })
+      .then((res) => {
+        this.setState({ profileData: res.data, fetching: false });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  updateProfile(e) {
+    e.preventDefault();
+    const { phone_number, bio } = e.target.elements;
+    const { user } = this.props.auth;
+
+    console.log(e.target.elements);
+    axios
+      .post("/recruiter/profile/update", {
+        user_id: user.id,
+        phone_number: phone_number?.value,
+        bio: bio?.value,
+      })
+      .then((res) => {
+        this.setState({ profileData: res.data });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
   render() {
     if (!this.state.authorized) {
       this.props.history.goBack();
       return <></>;
+    }
+
+    if (this.state.fetching) {
+      return <React.Fragment>Fetching data...</React.Fragment>;
     }
 
     return (
@@ -46,12 +80,15 @@ class RecruiterProfile extends Component {
           </Row>
           <Row className="mb-3">
             <Col>
-              <Form>
+              <Form onSubmit={this.updateProfile}>
                 <Row>
                   <Col xs={12} md={4}>
                     <Form.Group controlId="detailsName">
                       <Form.Label>Full Name</Form.Label>
-                      <Form.Control defaultValue={user.name} readOnly />
+                      <Form.Control
+                        defaultValue={this.state.profileData.name}
+                        readOnly
+                      />
                     </Form.Group>
                   </Col>
                   <Col sm={12} md={4}>
@@ -59,23 +96,30 @@ class RecruiterProfile extends Component {
                       <Form.Label>Email</Form.Label>
                       <Form.Control
                         type="email"
-                        defaultValue={user.email}
+                        defaultValue={this.state.profileData.email}
                         readOnly
                       />
                     </Form.Group>
                   </Col>
                   <Col sm={12} md={4}>
-                    <Form.Group controlId="detailsPhoneNumber">
+                    <Form.Group controlId="phone_number">
                       <Form.Label>Phone Number</Form.Label>
-                      <Form.Control defaultValue={user.phoneNumber} readOnly />
+                      <Form.Control
+                        defaultValue={this.state.profileData.phone_number}
+                        type="number"
+                      />
                     </Form.Group>
                   </Col>
                 </Row>
                 <Row className="mb-3">
                   <Col xs={12}>
-                    <Form.Group controlId="userBio">
+                    <Form.Group controlId="bio">
                       <Form.Label>Bio</Form.Label>
-                      <Form.Control as="textarea" rows={6} value={user.bio} />
+                      <Form.Control
+                        as="textarea"
+                        rows={6}
+                        defaultValue={this.state.profileData.bio}
+                      />
                     </Form.Group>
                   </Col>
                 </Row>
