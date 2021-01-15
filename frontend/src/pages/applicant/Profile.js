@@ -8,6 +8,7 @@ import MainHeading from "../../components/MainHeading";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
+import axios from "axios";
 
 const user = {
   name: "Ashwin Rao",
@@ -38,7 +39,12 @@ class ApplicantProfile extends Component {
     super(props);
     this.state = {
       authorized: true,
+      fetching: true,
     };
+    this.addEducation = this.addEducation.bind(this);
+    this.removeEducation = this.removeEducation.bind(this);
+    this.addSkill = this.addSkill.bind(this);
+    this.removeSkill = this.removeSkill.bind(this);
   }
 
   componentWillMount() {
@@ -46,11 +52,115 @@ class ApplicantProfile extends Component {
     this.state.authorized = this.props.auth.user.userType === "applicant";
   }
 
+  componentDidMount() {
+    // get applicant profile
+    const { user } = this.props.auth;
+    axios
+      .post("/applicant/profile/load", {
+        user_id: user.id,
+      })
+      .then((res) => {
+        this.setState({ profileData: res.data, fetching: false });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  addEducation(e) {
+    e.preventDefault();
+    const { institute_name, start_year, end_year } = e.target.elements;
+    const { user } = this.props.auth;
+    console.log(e.target.elements);
+
+    axios
+      .post("/applicant/profile/addeducation", {
+        user_id: user.id,
+        institute_name: institute_name.value,
+        start_year: start_year.value,
+        end_year: end_year.value,
+      })
+      .then((res) => {
+        console.log(res);
+        this.setState({ profileData: res.data });
+
+        Array.from(e.target.elements).forEach((ele) => {
+          ele.value = "";
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  removeEducation(e, education) {
+    e.preventDefault();
+    const { user } = this.props.auth;
+
+    axios
+      .post("/applicant/profile/removeeducation", {
+        user_id: user.id,
+        education_id: education._id,
+      })
+      .then((res) => {
+        this.setState({ profileData: res.data });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  addSkill(e) {
+    e.preventDefault();
+    const { skill } = e.target.elements;
+    const { user } = this.props.auth;
+
+    axios
+      .post("/applicant/profile/addskill", {
+        user_id: user.id,
+        skill: skill.value,
+      })
+      .then((res) => {
+        console.log(res);
+        this.setState({ profileData: res.data });
+
+        Array.from(e.target.elements).forEach((ele) => {
+          ele.value = "";
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  removeSkill(e, skill) {
+    e.preventDefault();
+    const { user } = this.props.auth;
+
+    axios
+      .post("/applicant/profile/removeskill", {
+        user_id: user.id,
+        skill,
+      })
+      .then((res) => {
+        this.setState({ profileData: res.data });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
   render() {
     if (!this.state.authorized) {
       this.props.history.goBack();
       return <></>;
     }
+
+    if (this.state.fetching) {
+      return <React.Fragment>Fetching data...</React.Fragment>;
+    }
+
+    const { profileData } = this.state;
 
     return (
       <React.Fragment>
@@ -69,7 +179,7 @@ class ApplicantProfile extends Component {
                   <Col xs={12} md={4}>
                     <Form.Group controlId="detailsName">
                       <Form.Label>Full Name</Form.Label>
-                      <Form.Control defaultValue={user.name} readOnly />
+                      <Form.Control defaultValue={profileData.name} readOnly />
                     </Form.Group>
                   </Col>
                   <Col sm={12} md={4}>
@@ -77,7 +187,7 @@ class ApplicantProfile extends Component {
                       <Form.Label>Email</Form.Label>
                       <Form.Control
                         type="email"
-                        defaultValue={user.email}
+                        defaultValue={profileData.email}
                         readOnly
                       />
                     </Form.Group>
@@ -85,7 +195,7 @@ class ApplicantProfile extends Component {
                   <Col sm={12} md={4}>
                     <Form.Group controlId="detailsRating">
                       <Form.Label>Rating</Form.Label>
-                      <Form.Control value={user.rating} readOnly />
+                      <Form.Control value={profileData.rating} readOnly />
                     </Form.Group>
                   </Col>
                 </Row>
@@ -107,41 +217,54 @@ class ApplicantProfile extends Component {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Name</th>
+                      <th>Institute Name</th>
                       <th>Start Year</th>
                       <th>End Year</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {user.education.map((obj, i) => (
+                    {profileData.education.map((obj, i) => (
                       <tr>
                         <td>{i + 1}</td>
-                        <td>{obj.name}</td>
-                        <td>{obj.startYear}</td>
-                        <td>{obj.endYear}</td>
+                        <td>{obj.institute_name}</td>
+                        <td>{obj.start_year}</td>
+                        <td>{obj.end_year}</td>
                         <td>
-                          <Button variant="outline-danger">Delete Entry</Button>
+                          <Button
+                            variant="outline-danger"
+                            onClick={(e) => this.removeEducation(e, obj)}
+                          >
+                            Delete Entry
+                          </Button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </Table>
-                <Form>
+                <Form onSubmit={this.addEducation}>
                   <Row>
                     <Col xs={12} sm={4} md="auto">
-                      <Form.Group controlId="name">
-                        <Form.Control placeholder="College Name" />
+                      <Form.Group controlId="institute_name">
+                        <Form.Control
+                          placeholder="College Name"
+                          ref="institute_name"
+                          required
+                        />
                       </Form.Group>
                     </Col>
                     <Col xs={12} sm={4} md="auto">
-                      <Form.Group controlId="startYear">
-                        <Form.Control placeholder="Start Year" />
+                      <Form.Group controlId="start_year">
+                        <Form.Control
+                          placeholder="Start Year"
+                          ref="start_year"
+                          required
+                        />
                       </Form.Group>
                     </Col>
                     <Col xs={12} sm={4} md="auto">
-                      <Form.Group controlId="endYear">
-                        <Form.Control placeholder="End Year" />
+                      <Form.Group controlId="end_year">
+                        <Form.Control placeholder="End Year" ref="end_year" />
                       </Form.Group>
                     </Col>
                     <Col xs={12} sm="auto">
@@ -167,12 +290,16 @@ class ApplicantProfile extends Component {
                     </tr>
                   </thead>
                   <tbody>
-                    {user.skills.map((skill, i) => (
+                    {profileData.skills.map((skill, i) => (
                       <tr>
                         <td>{i + 1}</td>
                         <td>{skill}</td>
                         <td>
-                          <Button variant="outline-danger" type="submit">
+                          <Button
+                            variant="outline-danger"
+                            type="submit"
+                            onClick={(e) => this.removeSkill(e, skill)}
+                          >
                             Delete Entry
                           </Button>
                         </td>
@@ -180,11 +307,15 @@ class ApplicantProfile extends Component {
                     ))}
                   </tbody>
                 </Table>
-                <Form>
+                <Form onSubmit={this.addSkill}>
                   <Row>
                     <Col xs={12} sm="auto">
                       <Form.Group controlId="skill">
-                        <Form.Control placeholder="Skill" />
+                        <Form.Control
+                          placeholder="Skill"
+                          ref="skill"
+                          required
+                        />
                       </Form.Group>
                     </Col>
                     <Col xs={12} sm="auto">

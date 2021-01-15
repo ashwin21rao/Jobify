@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 // Create Schema
-const UserSchema = new Schema({
+const RecruiterSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -10,17 +10,23 @@ const UserSchema = new Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
   },
-  password: {
+  user_id: {
     type: String,
     required: true,
   },
-  userType: {
+  phone_number: {
+    type: String,
+    required: true,
+  },
+  bio: {
+    type: String,
+  },
+  company: {
     type: String,
     required: true,
   },
 });
 
 // Create collection "users"
-module.exports = User = mongoose.model("users", UserSchema);
+module.exports = Recruiter = mongoose.model("recruiters", RecruiterSchema);
