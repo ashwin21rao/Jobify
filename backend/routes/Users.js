@@ -11,6 +11,8 @@ const validateLogin = require("../validation/Login");
 
 // Load User model
 const User = require("../models/UserSchema");
+const Applicant = require("../models/ApplicantSchema");
+const Recruiter = require("../models/RecruiterSchema");
 
 // Signup route
 router.post("/signup", (req, res) => {
@@ -36,9 +38,36 @@ router.post("/signup", (req, res) => {
         bcrypt.hash(newUser.password, salt, (err, hash) => {
           if (err) throw err;
           newUser.password = hash;
+
+          // save new user
           newUser
             .save()
-            .then((user) => res.json(user))
+            .then((user) => {
+              // save user in applicant or recruiter collection
+              if (user.userType === "applicant") {
+                const applicant = new Applicant({
+                  user_id: user._id,
+                  name: user.name,
+                  email: user.email,
+                });
+
+                applicant
+                  .save()
+                  .then((appl) => res.json(user))
+                  .catch((err) => console.log(err));
+              } else if (user.userType === "recruiter") {
+                const recruiter = new Recruiter({
+                  user_id: user._id,
+                  name: user.name,
+                  email: user.email,
+                });
+
+                recruiter
+                  .save()
+                  .then((recr) => res.json(user))
+                  .catch((err) => console.log(err));
+              }
+            })
             .catch((err) => console.log(err));
         });
       });

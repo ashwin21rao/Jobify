@@ -14,33 +14,19 @@ const User = require("../../models/UserSchema");
 router.post("/load", (req, res) => {
   const { user_id } = req.body;
 
-  Recruiter.findOne({ user_id: user_id }).then((recr) => {
-    if (!recr) {
-      User.findOne({ _id: mongoose.Types.ObjectId(user_id) }).then((user) => {
-        const recruiter = new Recruiter({
-          user_id,
-          name: user.name,
-          email: user.email,
-        });
-
-        recruiter
-          .save()
-          .then((newRecr) => res.json(newRecr))
-          .catch((err) => console.log(err));
-      });
-    } else {
-      res.json(recr);
-    }
-  });
+  Recruiter.findOne({ user_id: user_id })
+    .then((recr) => res.json(recr))
+    .catch((err) => console.log(err));
 });
 
 // Update profile
 router.post("/update", (req, res) => {
-  const { user_id, phone_number, bio } = req.body;
+  const { user_id, phone_number, company, bio } = req.body;
   Recruiter.findOneAndUpdate(
     { user_id },
     {
       phone_number,
+      company,
       bio,
     },
     {

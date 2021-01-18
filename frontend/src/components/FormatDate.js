@@ -1,5 +1,20 @@
-const FormatDate = function (date, locale = "en-GB", in_words = false) {
+const FormatDate = function (
+  date,
+  show_time = false,
+  in_words = false,
+  locale = "en-GB"
+) {
   let options = {};
+  if (show_time) {
+    options = {
+      year: "numeric",
+      day: "numeric",
+      month: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+    };
+  }
   if (in_words)
     options = {
       year: "numeric",

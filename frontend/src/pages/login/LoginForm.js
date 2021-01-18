@@ -25,8 +25,6 @@ class LoginForm extends Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.auth.isAuthenticated) {
-      console.log(nextProps.auth);
-
       // go to dashboard after login
       this.props.history.push(`/${nextProps.auth.user.userType}/dashboard`);
     }
@@ -52,7 +50,6 @@ class LoginForm extends Component {
       password: this.state.password,
     };
 
-    console.log(userData);
     this.props.loginUser(userData);
   };
 

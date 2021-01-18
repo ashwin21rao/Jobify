@@ -3,78 +3,205 @@ import Table from "react-bootstrap/Table";
 import ApplicantNavbar from "./Navbar";
 import Form from "react-bootstrap/Form";
 import { Container, Row, Col } from "react-bootstrap/";
-import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
-import ModalWindow from "../../components/ModalWindow";
+import ApplyModalWindow from "../../components/ApplyModalWindow";
+import formatDate from "../../components/FormatDate";
+import DismissibleAlert from "../../components/Alert";
+import Fuse from "fuse.js";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
-
-const jobs = [
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    deadline: Date.now(),
-    type: "full time",
-    duration: "23",
-  },
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    deadline: Date.now(),
-    type: "full time",
-    duration: "23",
-  },
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    deadline: Date.now(),
-    type: "full time",
-    duration: "23",
-  },
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    deadline: Date.now(),
-    type: "full time",
-    duration: "23",
-  },
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    deadline: Date.now(),
-    type: "full time",
-    duration: "23",
-  },
-];
+import axios from "axios";
 
 class ApplicantDashboard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      authorized: true,
+      authorized: props.auth.user.userType === "applicant",
+      fetching: true,
+      filters: {
+        job_type: "All",
+        duration: "All",
+        sort_by: { value: "None", type: "Asc" },
+        min_salary: "",
+        max_salary: "",
+        search_string: "",
+      },
+      can_apply: true,
     };
+    this.applyToJob = this.applyToJob.bind(this);
+
+    this.checkOutstandingApplications = this.checkOutstandingApplications.bind(
+      this
+    );
+    this.alertIfTooManyApplications = this.alertIfTooManyApplications.bind(
+      this
+    );
+
+    this.filterjobs = this.filterJobs.bind(this);
+    this.filter = this.filter.bind(this);
+    this.sortJobsBy = this.sortJobsBy.bind(this);
+    this.sortJobsType = this.sortJobsType.bind(this);
   }
 
-  componentWillMount() {
-    // recruiter cannot view applicant pages
-    this.state.authorized = this.props.auth.user.userType === "applicant";
+  componentDidMount() {
+    // get jobs
+    const { user } = this.props.auth;
+    axios
+      .post("/applicant/dashboard/load", {
+        user_id: user.id,
+      })
+      .then((res) => {
+        this.setState({
+          original_jobData: res.data.jobData,
+          jobData: res.data.jobData,
+          jobsApplied: res.data.jobsApplied,
+          fetching: false,
+        });
+        this.checkOutstandingApplications();
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  applyToJob(sop, jobData) {
+    const { user } = this.props.auth;
+
+    axios
+      .post("/applicant/dashboard/apply", {
+        user_id: user.id,
+        job_id: jobData._id,
+        date_of_application: new Date(),
+        sop,
+      })
+      .then((res) => {
+        this.setState({
+          jobsApplied: res.data.jobsApplied,
+        });
+        this.checkOutstandingApplications();
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  checkOutstandingApplications() {
+    const { user } = this.props.auth;
+
+    axios
+      .post("/applicant/dashboard/outstandingapplications", {
+        user_id: user.id,
+      })
+      .then((res) => {
+        this.setState({
+          can_apply: +res.data < 3,
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  alertIfTooManyApplications() {
+    if (!this.state.can_apply) {
+      return (
+        <DismissibleAlert variant="primary" dismissible={false}>
+          You have reached the maximum number of outstanding applications.
+        </DismissibleAlert>
+      );
+    }
+  }
+
+  // FRONTEND FILTERING, SORTING, SEARCHING
+  filterJobs() {
+    const {
+      job_type,
+      duration,
+      sort_by,
+      min_salary,
+      max_salary,
+      search_string,
+    } = this.state.filters;
+
+    let jobData = this.state.jobData.slice();
+
+    const fuse = new Fuse(jobData, {
+      keys: ["title"],
+    });
+    jobData = search_string
+      ? fuse.search(search_string).map((job) => job.item)
+      : jobData;
+
+    if (sort_by.value !== "None") {
+      if (sort_by.type === "Asc")
+        jobData.sort((a, b) => a[sort_by.value] - b[sort_by.value]);
+      else jobData.sort((a, b) => b[sort_by.value] - a[sort_by.value]);
+    }
+
+    return jobData.filter((job) => {
+      const job_type_cond =
+        job_type === "All" ? true : job.job_type === job_type;
+
+      const duration_cond =
+        duration === "All"
+          ? true
+          : +job.duration < +duration && +job.duration > 0;
+
+      const min_salary_cond =
+        min_salary === "" ? true : +min_salary <= +job.salary;
+
+      const max_salary_cond =
+        max_salary === "" ? true : +max_salary >= +job.salary;
+
+      return (
+        new Date(job.deadline) - Date.now() > 0 &&
+        job_type_cond &&
+        min_salary_cond &&
+        max_salary_cond &&
+        duration_cond
+      );
+    });
+  }
+
+  filter(e) {
+    const { name, value } = e.target;
+    this.setState({
+      filters: { ...this.state.filters, [name]: value },
+    });
+  }
+
+  sortJobsBy(e) {
+    const { value } = e.target;
+    this.setState({
+      filters: {
+        ...this.state.filters,
+        sort_by: { ...this.state.filters.sort_by, value },
+      },
+    });
+  }
+
+  sortJobsType(e) {
+    const { checked } = e.target;
+    this.setState({
+      filters: {
+        ...this.state.filters,
+        sort_by: {
+          ...this.state.filters.sort_by,
+          type: checked ? "Desc" : "Asc",
+        },
+      },
+    });
   }
 
   render() {
     if (!this.state.authorized) {
       this.props.history.goBack();
       return <></>;
+    }
+
+    if (this.state.fetching) {
+      return <React.Fragment>Fetching data...</React.Fragment>;
     }
 
     return (
@@ -84,6 +211,7 @@ class ApplicantDashboard extends Component {
           <Row className="mt-3 mb-3">
             <Col>
               <MainHeading heading="Job Listings" />
+              {this.alertIfTooManyApplications()}
             </Col>
           </Row>
           <Row className="mb-3">
@@ -93,8 +221,11 @@ class ApplicantDashboard extends Component {
                   <Col xs={12}>
                     <Form className="border-bottom">
                       <Form.Group controlId="searchtext">
-                        <Form.Label>Search</Form.Label>
-                        <Form.Control />
+                        <Form.Label>Search by title</Form.Label>
+                        <Form.Control
+                          name="search_string"
+                          onChange={this.filter}
+                        />
                       </Form.Group>
                     </Form>
                   </Col>
@@ -104,10 +235,16 @@ class ApplicantDashboard extends Component {
                     <Form className="border-bottom">
                       <Form.Group controlId="jobtype">
                         <Form.Label>Job type</Form.Label>
-                        <Form.Control as="select" custom>
-                          <option value="full time">Full time</option>
-                          <option value="part time">Part time</option>
-                          <option value="work from home">Work from home</option>
+                        <Form.Control
+                          as="select"
+                          custom
+                          name="job_type"
+                          onChange={this.filter}
+                        >
+                          <option value="All">All</option>
+                          <option value="Full time">Full time</option>
+                          <option value="Part time">Part time</option>
+                          <option value="Work from home">Work from home</option>
                         </Form.Control>
                       </Form.Group>
                     </Form>
@@ -120,13 +257,21 @@ class ApplicantDashboard extends Component {
                         <Col>
                           <Form.Group controlId="minsalary">
                             <Form.Label>Min salary</Form.Label>
-                            <Form.Control />
+                            <Form.Control
+                              name="min_salary"
+                              type="number"
+                              onChange={this.filter}
+                            />
                           </Form.Group>
                         </Col>
                         <Col>
                           <Form.Group controlId="maxsalary">
                             <Form.Label>Max salary</Form.Label>
-                            <Form.Control />
+                            <Form.Control
+                              name="max_salary"
+                              type="number"
+                              onChange={this.filter}
+                            />
                           </Form.Group>
                         </Col>
                       </Row>
@@ -138,7 +283,13 @@ class ApplicantDashboard extends Component {
                     <Form className="border-bottom">
                       <Form.Group controlId="duration">
                         <Form.Label>Duration (months)</Form.Label>
-                        <Form.Control as="select" custom>
+                        <Form.Control
+                          as="select"
+                          custom
+                          name="duration"
+                          onChange={this.filter}
+                        >
+                          <option value="All">All</option>
                           <option value="1">1</option>
                           <option value="2">2</option>
                           <option value="3">3</option>
@@ -158,7 +309,12 @@ class ApplicantDashboard extends Component {
                         <Col xs={12} sm={6}>
                           <Form.Group controlId="sortBy">
                             <Form.Label>Sort by</Form.Label>
-                            <Form.Control as="select" custom>
+                            <Form.Control
+                              as="select"
+                              custom
+                              onChange={this.sortJobsBy}
+                            >
+                              <option value="None">None</option>
                               <option value="salary">Salary</option>
                               <option value="duration">Duration</option>
                               <option value="rating">Rating</option>
@@ -171,6 +327,7 @@ class ApplicantDashboard extends Component {
                               custom
                               label="Desc"
                               className="mt-xs-0 mt-sm-4"
+                              onChange={this.sortJobsType}
                             />
                           </Form.Group>
                         </Col>
@@ -181,12 +338,13 @@ class ApplicantDashboard extends Component {
               </Container>
             </Col>
             <Col xs={12} lg={9}>
-              <Table striped bordered hover responsive="lg">
+              <Table striped bordered hover responsive>
                 <thead>
                   <tr>
                     <th>#</th>
                     <th>Title</th>
                     <th>Company</th>
+                    <th>Skills</th>
                     <th>Rating</th>
                     <th>Salary</th>
                     <th>Deadline</th>
@@ -196,31 +354,28 @@ class ApplicantDashboard extends Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {jobs.map((obj, i) => (
-                    <tr>
+                  {this.filterJobs().map((obj, i) => (
+                    <tr key={i}>
                       <td>{i + 1}</td>
                       <td>{obj.title}</td>
-                      <td>{obj.company}</td>
+                      <td>{obj.recruiter_details.company}</td>
+                      <td>{obj.skills.join(", ")}</td>
                       <td>{obj.rating}</td>
                       <td>{obj.salary}</td>
-                      <td>{obj.deadline}</td>
-                      <td>{obj.type}</td>
-                      <td>{obj.duration}</td>
+                      <td>{formatDate(new Date(obj.deadline), true)}</td>
+                      <td>{obj.job_type}</td>
                       <td>
-                        <ModalWindow
-                          formId="modalForm"
-                          title="Statement of Purpose"
-                          buttonType={{
-                            label: "Apply",
-                            variant: "outline-success",
-                          }}
-                        >
-                          <Form id="modalForm">
-                            <Form.Group controlId="sop">
-                              <Form.Control as="textarea" rows={7} required />
-                            </Form.Group>
-                          </Form>
-                        </ModalWindow>
+                        {+obj.duration === 0
+                          ? "Indefinite"
+                          : `${obj.duration} months`}
+                      </td>
+                      <td>
+                        <ApplyModalWindow
+                          jobData={obj}
+                          can_apply={this.state.can_apply}
+                          applied={this.state.jobsApplied.includes(obj._id)}
+                          onSubmit={this.applyToJob}
+                        />
                       </td>
                     </tr>
                   ))}

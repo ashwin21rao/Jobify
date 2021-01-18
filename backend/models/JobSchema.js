@@ -76,6 +76,10 @@ const JobSchema = new Schema({
         type: Date,
         required: true,
       },
+      date_of_joining: {
+        type: Date,
+      },
+      _id: false,
     },
   ],
 });

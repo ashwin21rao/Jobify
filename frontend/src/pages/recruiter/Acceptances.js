@@ -2,181 +2,114 @@ import React, { Component } from "react";
 import Table from "react-bootstrap/Table";
 import RecruiterNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
-import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
 import ModalWindow from "../../components/ModalWindow";
+import FormatDate from "../../components/FormatDate";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
-
-const users = [
-  {
-    name: "Ashwin Rao",
-    email: "ashwin@gmail.com",
-    rating: 5,
-    skills: ["C", "C++", "Python"],
-    education: [
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-    ],
-    jobDetails: [
-      {
-        title: "Software intern",
-        company: "FCA",
-        rating: 5,
-        salary: 10000,
-        type: "full time",
-        duration: "23",
-        status: "Accepted",
-        joinDate: Date.now(),
-        sop:
-          "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Architecto, ipsam reiciendis odio illo a itaque nihil amet corporis magnam voluptate impedit animi ea aliquam eveniet!",
-      },
-      {
-        title: "Software intern",
-        company: "FCA",
-        rating: 5,
-        salary: 10000,
-        type: "full time",
-        duration: "23",
-        status: "Accepted",
-        joinDate: Date.now(),
-        sop:
-          "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Architecto, ipsam reiciendis odio illo a itaque nihil amet corporis magnam voluptate impedit animi ea aliquam eveniet!",
-      },
-    ],
-  },
-  {
-    name: "Ashwin Rao",
-    email: "ashwin@gmail.com",
-    rating: 5,
-    skills: ["C", "C++", "Python"],
-    education: [
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-    ],
-    jobDetails: [
-      {
-        title: "Software intern",
-        company: "FCA",
-        rating: 5,
-        salary: 10000,
-        type: "full time",
-        duration: "23",
-        status: "Accepted",
-        joinDate: Date.now(),
-        sop:
-          "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Architecto, ipsam reiciendis odio illo a itaque nihil amet corporis magnam voluptate impedit animi ea aliquam eveniet!",
-      },
-      {
-        title: "Software intern",
-        company: "FCA",
-        rating: 5,
-        salary: 10000,
-        type: "full time",
-        duration: "23",
-        status: "Accepted",
-        joinDate: Date.now(),
-        sop:
-          "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Architecto, ipsam reiciendis odio illo a itaque nihil amet corporis magnam voluptate impedit animi ea aliquam eveniet!",
-      },
-    ],
-  },
-  {
-    name: "Ashwin Rao",
-    email: "ashwin@gmail.com",
-    rating: 5,
-    skills: ["C", "C++", "Python"],
-    education: [
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-      {
-        name: "IIIT",
-        startYear: 2019,
-        endYear: 2023,
-      },
-    ],
-    jobDetails: [
-      {
-        title: "Software intern",
-        company: "FCA",
-        rating: 5,
-        salary: 10000,
-        type: "full time",
-        duration: "23",
-        status: "Accepted",
-        joinDate: Date.now(),
-        sop:
-          "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Architecto, ipsam reiciendis odio illo a itaque nihil amet corporis magnam voluptate impedit animi ea aliquam eveniet!",
-      },
-      {
-        title: "Software intern",
-        company: "FCA",
-        rating: 5,
-        salary: 10000,
-        type: "full time",
-        duration: "23",
-        status: "Accepted",
-        joinDate: Date.now(),
-        sop:
-          "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Architecto, ipsam reiciendis odio illo a itaque nihil amet corporis magnam voluptate impedit animi ea aliquam eveniet!",
-      },
-    ],
-  },
-];
+import axios from "axios";
 
 class AcceptedEmployees extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      authorized: true,
+      authorized: props.auth.user.userType === "recruiter",
+      fetching: true,
+      filters: {
+        sort_by: { value: "None", type: "Asc" },
+      },
     };
+
+    this.filterApplicants = this.filterApplicants.bind(this);
+    this.sortApplicantsBy = this.sortApplicantsBy.bind(this);
+    this.sortApplicantsType = this.sortApplicantsType.bind(this);
   }
 
-  componentWillMount() {
-    // applicant cannot view recruiter pages
-    this.state.authorized = this.props.auth.user.userType === "recruiter";
+  componentDidMount() {
+    const { user } = this.props.auth;
+
+    axios
+      .post("/recruiter/acceptances/load", {
+        user_id: user.id,
+      })
+      .then((res) => {
+        this.setState({
+          applicantData: res.data,
+          fetching: false,
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  // FRONTEND FILTERING, SORTING, SEARCHING
+  filterApplicants() {
+    const { sort_by } = this.state.filters;
+
+    let applicantData = this.state.applicantData.slice();
+    if (sort_by.value !== "None") {
+      const sort_type = sort_by.type === "Asc" ? 1 : -1;
+
+      if (sort_by.value === "name" || sort_by.value === "rating") {
+        applicantData.sort(
+          (a, b) =>
+            sort_type *
+            (a.applicant_details.personal_data[sort_by.value] >=
+            b.applicant_details.personal_data[sort_by.value]
+              ? 1
+              : -1)
+        );
+      } else if (sort_by.value === "date_of_joining") {
+        applicantData.sort(
+          (a, b) =>
+            sort_type *
+            (new Date(a.applicant_details[sort_by.value]) -
+              new Date(b.applicant_details[sort_by.value]))
+        );
+      } else if (sort_by.value === "title") {
+        applicantData.sort(
+          (a, b) => sort_type * (a[sort_by.value] > b[sort_by.value] ? 1 : -1)
+        );
+      }
+    }
+
+    return applicantData;
+  }
+
+  sortApplicantsBy(e) {
+    const { value } = e.target;
+    this.setState({
+      filters: {
+        ...this.state.filters,
+        sort_by: { ...this.state.filters.sort_by, value },
+      },
+    });
+  }
+
+  sortApplicantsType(e) {
+    const { checked } = e.target;
+    this.setState({
+      filters: {
+        ...this.state.filters,
+        sort_by: {
+          ...this.state.filters.sort_by,
+          type: checked ? "Desc" : "Asc",
+        },
+      },
+    });
   }
 
   render() {
     if (!this.state.authorized) {
       this.props.history.goBack();
       return <></>;
+    }
+
+    if (this.state.fetching) {
+      return <React.Fragment>Fetching data...</React.Fragment>;
     }
 
     return (
@@ -195,18 +128,27 @@ class AcceptedEmployees extends Component {
                   <Col xs="auto">
                     <Form.Group controlId="sortBy">
                       <Form.Label>Sort by</Form.Label>
-                      <Form.Control as="select" custom>
-                        <option value="unsorted">Unsorted</option>
+                      <Form.Control
+                        as="select"
+                        custom
+                        onChange={this.sortApplicantsBy}
+                      >
+                        <option value="None">None</option>
                         <option value="name">Name</option>
-                        <option value="jobTitle">Job Title</option>
-                        <option value="joinDate">Date of Joining</option>
-                        <option value="empRating">Rating</option>
+                        <option value="title">Job Title</option>
+                        <option value="date_of_joining">Date of Joining</option>
+                        <option value="rating">Rating</option>
                       </Form.Control>
                     </Form.Group>
                   </Col>
                   <Col xs="auto">
                     <Form.Group controlId="sortType">
-                      <Form.Check custom label="Desc" className="mt-4" />
+                      <Form.Check
+                        custom
+                        label="Desc"
+                        className="mt-4"
+                        onChange={this.sortApplicantsType}
+                      />
                     </Form.Group>
                   </Col>
                 </Row>
@@ -228,39 +170,41 @@ class AcceptedEmployees extends Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user, i) =>
-                    user.jobDetails.map((job, j) => (
-                      <tr onClick={() => console.log("Hello")}>
-                        <td>{i + j + 1}</td>
-                        <td>{user.name}</td>
-                        <td>{job.title}</td>
-                        <td>{job.joinDate}</td>
-                        <td>{job.type}</td>
-                        <td>{user.rating}</td>
-                        <td>
-                          <ModalWindow
-                            formId="modalForm"
-                            title="Rating"
-                            buttonType={{
-                              label: "Rate",
-                              variant: "outline-info",
-                            }}
-                          >
-                            <Form id="modalForm">
-                              <Form.Group controlId="rating">
-                                <Form.Control
-                                  type="number"
-                                  min="0"
-                                  max="5"
-                                  required
-                                />
-                              </Form.Group>
-                            </Form>
-                          </ModalWindow>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  {this.filterApplicants().map((appl, i) => (
+                    <tr key={i}>
+                      <td>{i + 1}</td>
+                      <td>{appl.applicant_details.personal_data.name}</td>
+                      <td>{appl.title}</td>
+                      <td>
+                        {FormatDate(
+                          new Date(appl.applicant_details.date_of_joining)
+                        )}
+                      </td>
+                      <td>{appl.job_type}</td>
+                      <td>{appl.applicant_details.personal_data.rating}</td>
+                      <td>
+                        <ModalWindow
+                          formId="modalForm"
+                          title="Rating"
+                          buttonType={{
+                            label: "Rate",
+                            variant: "outline-info",
+                          }}
+                        >
+                          <Form id="modalForm">
+                            <Form.Group controlId="rating">
+                              <Form.Control
+                                type="number"
+                                min="0"
+                                max="5"
+                                required
+                              />
+                            </Form.Group>
+                          </Form>
+                        </ModalWindow>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </Table>
             </Col>

@@ -44,7 +44,6 @@ function App() {
         <CssBaseline />
         <Router>
           <Switch>
-            {/* Login and Signup pages */}
             <Route path="/" exact>
               <LoginContainer>
                 <LoginForm />

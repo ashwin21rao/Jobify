@@ -4,6 +4,7 @@ import RecruiterNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
 import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
+import DismissibleAlert from "../../components/Alert";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
@@ -13,15 +14,11 @@ class RecruiterProfile extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      authorized: true,
+      authorized: props.auth.user.userType === "recruiter",
       fetching: true,
+      submitted: false,
     };
     this.updateProfile = this.updateProfile.bind(this);
-  }
-
-  componentWillMount() {
-    // applicant cannot view recruiter pages
-    this.state.authorized = this.props.auth.user.userType === "recruiter";
   }
 
   componentDidMount() {
@@ -41,22 +38,33 @@ class RecruiterProfile extends Component {
 
   updateProfile(e) {
     e.preventDefault();
-    const { phone_number, bio } = e.target.elements;
+    const { phone_number, company, bio } = e.target.elements;
     const { user } = this.props.auth;
 
     console.log(e.target.elements);
     axios
       .post("/recruiter/profile/update", {
         user_id: user.id,
+        company: company?.value,
         phone_number: phone_number?.value,
         bio: bio?.value,
       })
       .then((res) => {
-        this.setState({ profileData: res.data });
+        this.setState({ profileData: res.data, submitted: true });
       })
       .catch(function (error) {
         console.log(error);
       });
+  }
+
+  showAlert() {
+    if (this.state.submitted) {
+      return (
+        <DismissibleAlert variant="success" dismissible={true}>
+          Profile updated successfully
+        </DismissibleAlert>
+      );
+    }
   }
 
   render() {
@@ -82,7 +90,7 @@ class RecruiterProfile extends Component {
             <Col>
               <Form onSubmit={this.updateProfile}>
                 <Row>
-                  <Col xs={12} md={4}>
+                  <Col xs={12} md={6}>
                     <Form.Group controlId="detailsName">
                       <Form.Label>Full Name</Form.Label>
                       <Form.Control
@@ -91,7 +99,7 @@ class RecruiterProfile extends Component {
                       />
                     </Form.Group>
                   </Col>
-                  <Col sm={12} md={4}>
+                  <Col sm={12} md={6}>
                     <Form.Group controlId="detailsEmail">
                       <Form.Label>Email</Form.Label>
                       <Form.Control
@@ -101,12 +109,22 @@ class RecruiterProfile extends Component {
                       />
                     </Form.Group>
                   </Col>
-                  <Col sm={12} md={4}>
+                </Row>
+                <Row>
+                  <Col sm={12} md={6}>
                     <Form.Group controlId="phone_number">
                       <Form.Label>Phone Number</Form.Label>
                       <Form.Control
                         defaultValue={this.state.profileData.phone_number}
                         type="number"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col xs={12} md={6}>
+                    <Form.Group controlId="company">
+                      <Form.Label>Company</Form.Label>
+                      <Form.Control
+                        defaultValue={this.state.profileData.company}
                       />
                     </Form.Group>
                   </Col>
@@ -124,7 +142,7 @@ class RecruiterProfile extends Component {
                   </Col>
                 </Row>
                 <Row className="mb-3">
-                  <Col sm={12} sm="auto">
+                  <Col sm="auto">
                     <Button variant="success" type="submit">
                       Update details
                     </Button>
@@ -133,6 +151,7 @@ class RecruiterProfile extends Component {
               </Form>
             </Col>
           </Row>
+          {this.showAlert()}
         </Container>
       </React.Fragment>
     );

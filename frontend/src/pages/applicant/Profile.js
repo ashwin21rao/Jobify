@@ -14,18 +14,13 @@ class ApplicantProfile extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      authorized: true,
+      authorized: props.auth.user.userType === "applicant",
       fetching: true,
     };
     this.addEducation = this.addEducation.bind(this);
     this.removeEducation = this.removeEducation.bind(this);
     this.addSkill = this.addSkill.bind(this);
     this.removeSkill = this.removeSkill.bind(this);
-  }
-
-  componentWillMount() {
-    // recruiter cannot view applicant pages
-    this.state.authorized = this.props.auth.user.userType === "applicant";
   }
 
   componentDidMount() {
@@ -152,7 +147,7 @@ class ApplicantProfile extends Component {
           <Row className="mb-3">
             <Col>
               <h3>Personal Details</h3>
-              <Form>
+              <Form onSubmit={(e) => e.preventDefault()}>
                 <Row>
                   <Col xs={12} md={4}>
                     <Form.Group controlId="detailsName">

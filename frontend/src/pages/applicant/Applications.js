@@ -2,76 +2,40 @@ import React, { Component } from "react";
 import Table from "react-bootstrap/Table";
 import ApplicantNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
-import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
 import ModalWindow from "../../components/ModalWindow";
+import FormatDate from "../../components/FormatDate";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
-
-const jobs = [
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    type: "full time",
-    duration: "23",
-    status: "Accepted",
-    joinDate: Date.now(),
-  },
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    type: "full time",
-    duration: "23",
-    status: "Accepted",
-    joinDate: Date.now(),
-  },
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    type: "full time",
-    duration: "23",
-    status: "Rejected",
-  },
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    type: "full time",
-    duration: "23",
-    status: "Accepted",
-    joinDate: Date.now(),
-  },
-  {
-    title: "Software intern",
-    company: "FCA",
-    rating: 5,
-    salary: 10000,
-    type: "full time",
-    duration: "23",
-    status: "Rejected",
-  },
-];
+import axios from "axios";
 
 class MyApplications extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      authorized: true,
+      authorized: props.auth.user.userType === "applicant",
+      fetching: true,
     };
   }
 
-  componentWillMount() {
-    // recruiter cannot view applicant pages
-    this.state.authorized = this.props.auth.user.userType === "applicant";
+  componentDidMount() {
+    // get jobs
+    const { user } = this.props.auth;
+    axios
+      .post("/applicant/applications/load", {
+        user_id: user.id,
+      })
+      .then((res) => {
+        this.setState({
+          applicationData: res.data,
+          fetching: false,
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
   }
 
   render() {
@@ -80,10 +44,14 @@ class MyApplications extends Component {
       return <></>;
     }
 
+    if (this.state.fetching) {
+      return <React.Fragment>Fetching data...</React.Fragment>;
+    }
+
     return (
       <React.Fragment>
         <ApplicantNavbar />
-        <Container fluid="lg">
+        <Container fluid>
           <Row className="mt-3 mb-3">
             <Col xs={12}>
               <MainHeading heading="My Applications" />
@@ -96,6 +64,7 @@ class MyApplications extends Component {
                   <tr>
                     <th>#</th>
                     <th>Title</th>
+                    <th>Recruiter Name</th>
                     <th>Company</th>
                     <th>Rating</th>
                     <th>Salary</th>
@@ -107,17 +76,36 @@ class MyApplications extends Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {jobs.map((obj, i) => (
-                    <tr>
+                  {this.state.applicationData.map((obj, i) => (
+                    <tr key={i}>
                       <td>{i + 1}</td>
                       <td>{obj.title}</td>
-                      <td>{obj.company}</td>
+                      <td>{obj.recruiter_details.name}</td>
+                      <td>{obj.recruiter_details.company}</td>
                       <td>{obj.rating}</td>
                       <td>{obj.salary}</td>
-                      <td>{obj.type}</td>
-                      <td>{obj.duration}</td>
-                      <td>{obj.status}</td>
-                      <td>{obj.joinDate ?? ""}</td>
+                      <td>{obj.job_type}</td>
+                      <td>{`${obj.duration} months`}</td>
+                      <td
+                        className={
+                          obj.applicant_details.status === "Accepted"
+                            ? "text-success"
+                            : obj.applicant_details.status === "Rejected"
+                            ? "text-danger"
+                            : obj.applicant_details.status === "Shortlisted"
+                            ? "text-info"
+                            : ""
+                        }
+                      >
+                        {obj.applicant_details.status}
+                      </td>
+                      <td>
+                        {obj.applicant_details.date_of_joining
+                          ? FormatDate(
+                              new Date(obj.applicant_details?.date_of_joining)
+                            )
+                          : ""}
+                      </td>
                       <td>
                         <ModalWindow
                           formId="modalForm"

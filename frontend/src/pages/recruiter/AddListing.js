@@ -8,7 +8,7 @@ import Table from "react-bootstrap/Table";
 import FormatDate from "../../components/FormatDate";
 import {
   MuiPickersUtilsProvider,
-  KeyboardDatePicker,
+  KeyboardDateTimePicker,
 } from "@material-ui/pickers";
 import "date-fns";
 import DateFnsUtils from "@date-io/date-fns";
@@ -21,7 +21,7 @@ class AddListing extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      authorized: true,
+      authorized: props.auth.user.userType === "recruiter",
       datePickerDate: props.location.jobData?.deadline ?? new Date(),
       skills: props.location.jobData?.skills ?? [],
     };
@@ -33,14 +33,8 @@ class AddListing extends Component {
     this.removeSkill = this.removeSkill.bind(this);
   }
 
-  componentWillMount() {
-    // applicant cannot view recruiter pages
-    this.state.authorized = this.props.auth.user.userType === "recruiter";
-  }
-
   editListing(e) {
     const { max_applicants, positions_available } = e.target.elements;
-    const { user } = this.props.auth;
     const { jobData } = this.props.location;
 
     axios
@@ -52,7 +46,6 @@ class AddListing extends Component {
         skills: this.state.skills,
       })
       .then((res) => {
-        console.log(res);
         this.props.history.push("/recruiter/dashboard/"); // go to dashboard
       })
       .catch(function (error) {
@@ -93,7 +86,6 @@ class AddListing extends Component {
         skills: this.state.skills,
       })
       .then((res) => {
-        console.log(res);
         this.props.history.push("/recruiter/dashboard/"); // go to dashboard
       })
       .catch(function (error) {
@@ -146,6 +138,7 @@ class AddListing extends Component {
                       <Form.Control
                         defaultValue={jobData?.title}
                         disabled={Boolean(jobData)}
+                        required
                       />
                     </Form.Group>
                   </Col>
@@ -156,10 +149,11 @@ class AddListing extends Component {
                         as="select"
                         custom
                         disabled={Boolean(jobData)}
+                        required
                       >
-                        <option value="full time">Full time</option>
-                        <option value="part time">Part time</option>
-                        <option value="work from home">Work from home</option>
+                        <option value="Full time">Full time</option>
+                        <option value="Part time">Part time</option>
+                        <option value="Work from home">Work from home</option>
                       </Form.Control>
                     </Form.Group>
                   </Col>
@@ -171,6 +165,7 @@ class AddListing extends Component {
                           new Date(jobData?.date_of_posting ?? Date.now())
                         )}
                         disabled
+                        required
                       />
                     </Form.Group>
                   </Col>
@@ -179,23 +174,30 @@ class AddListing extends Component {
                   <Col xs={12} sm={4}>
                     <Form.Label>Deadline</Form.Label>
                     <MuiPickersUtilsProvider utils={DateFnsUtils}>
-                      <KeyboardDatePicker
-                        disableToolbar
+                      <KeyboardDateTimePicker
+                        // disableToolbar
                         variant="inline"
-                        format="dd/MM/yyyy"
+                        format="dd/MM/yyyy HH:mm"
                         margin="normal"
                         name="deadline"
                         value={this.state.datePickerDate}
                         onChange={this.handleDatePicker}
                         style={{ marginTop: "0.3rem" }}
                         fullWidth={true}
+                        required
+                        disablePast
                       />
                     </MuiPickersUtilsProvider>
                   </Col>
                   <Col xs={12} sm={4}>
                     <Form.Group controlId="max_applicants">
                       <Form.Label>Maximum Applicants</Form.Label>
-                      <Form.Control defaultValue={jobData?.max_applicants} />
+                      <Form.Control
+                        defaultValue={jobData?.max_applicants}
+                        required
+                        type="number"
+                        min="0"
+                      />
                     </Form.Group>
                   </Col>
                   <Col xs={12} sm={4}>
@@ -203,6 +205,9 @@ class AddListing extends Component {
                       <Form.Label>Positions Available</Form.Label>
                       <Form.Control
                         defaultValue={jobData?.positions_available}
+                        required
+                        type="number"
+                        min="0"
                       />
                     </Form.Group>
                   </Col>
@@ -210,10 +215,14 @@ class AddListing extends Component {
                 <Row>
                   <Col xs={12} sm={4}>
                     <Form.Group controlId="duration">
-                      <Form.Label>Duration</Form.Label>
+                      <Form.Label>Duration (months)</Form.Label>
                       <Form.Control
                         defaultValue={jobData?.duration}
                         disabled={Boolean(jobData)}
+                        type="number"
+                        min="0"
+                        max="6"
+                        required
                       />
                     </Form.Group>
                   </Col>
@@ -223,6 +232,9 @@ class AddListing extends Component {
                       <Form.Control
                         defaultValue={jobData?.salary}
                         disabled={Boolean(jobData)}
+                        required
+                        type="number"
+                        min="0"
                       />
                     </Form.Group>
                   </Col>
@@ -251,7 +263,7 @@ class AddListing extends Component {
                       </thead>
                       <tbody>
                         {this.state.skills.map((skill, i) => (
-                          <tr>
+                          <tr key={i}>
                             <td>{i + 1}</td>
                             <td>{skill}</td>
                             <td>

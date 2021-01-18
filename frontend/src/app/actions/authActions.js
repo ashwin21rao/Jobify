@@ -5,7 +5,6 @@ import { GET_ERRORS, SET_CURRENT_USER, USER_LOADING } from "./types";
 
 // Signup user
 export const signupUser = (userData, history) => (dispatch) => {
-  console.log(userData);
   axios
     .post("/users/signup", userData)
     .then((res) => history.push("/")) // re-direct to login on success
@@ -60,8 +59,6 @@ export const setUserLoading = () => {
 
 // Logout user
 export const logoutUser = () => (dispatch) => {
-  console.log("HEREEEEEEEEEEEEEEEEEEEE");
-
   // Remove token from local storage
   localStorage.removeItem("jwtToken");
 

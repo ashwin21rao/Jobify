@@ -14,7 +14,11 @@ function ModalWindow(props) {
 
   return (
     <React.Fragment>
-      <Button variant={props.buttonType.variant} onClick={handleShow}>
+      <Button
+        variant={props.buttonType.variant}
+        onClick={handleShow}
+        disabled={props.buttonType.disabled}
+      >
         {props.buttonType.label}
       </Button>
 

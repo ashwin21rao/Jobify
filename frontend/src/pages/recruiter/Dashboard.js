@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
 import Table from "react-bootstrap/Table";
 import RecruiterNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
@@ -15,7 +14,7 @@ class RecruiterDashboard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      authorized: true,
+      authorized: props.auth.user.userType === "recruiter",
       fetching: true,
     };
     this.passDataAndNavigate = this.passDataAndNavigate.bind(this);
@@ -28,11 +27,6 @@ class RecruiterDashboard extends Component {
       pathname: path,
       jobData: data,
     });
-  }
-
-  componentWillMount() {
-    // applicant cannot view recruiter pages
-    this.state.authorized = this.props.auth.user.userType === "recruiter";
   }
 
   componentDidMount() {
@@ -121,6 +115,7 @@ class RecruiterDashboard extends Component {
                 <tbody>
                   {this.state.jobData.map((obj, i) => (
                     <tr
+                      key={i}
                       onClick={(e) =>
                         this.passDataAndNavigate(
                           e,
@@ -133,11 +128,15 @@ class RecruiterDashboard extends Component {
                       <td>{i + 1}</td>
                       <td>{obj.title}</td>
                       <td>{FormatDate(new Date(obj.date_of_posting))}</td>
-                      <td>{FormatDate(new Date(obj.deadline))}</td>
+                      <td>{FormatDate(new Date(obj.deadline), true)}</td>
                       <td>{obj.max_applicants}</td>
                       <td>{obj.positions_available}</td>
                       <td>{obj.job_type}</td>
-                      <td>{obj.duration}</td>
+                      <td>
+                        {+obj.duration === 0
+                          ? "Indefinite"
+                          : `${obj.duration} months`}
+                      </td>
                       <td>{obj.skills.join(", ")}</td>
                       <td>{obj.salary}</td>
                       <td>{obj.rating}</td>
