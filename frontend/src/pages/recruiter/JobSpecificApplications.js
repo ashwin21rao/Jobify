@@ -7,6 +7,7 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
 import FormatDate from "../../components/FormatDate";
+import RoundNumber from "../../components/RoundNumber";
 import DismissibleAlert from "../../components/Alert";
 
 import { connect } from "react-redux";
@@ -284,7 +285,7 @@ class JobSpecificApplications extends Component {
                       </td>
                       <td>{FormatDate(new Date(appl.date_of_application))}</td>
                       <td>{appl.sop}</td>
-                      <td>{appl.personal_data.rating}</td>
+                      <td>{RoundNumber(appl.personal_data.rating, 2)}</td>
                       <td
                         className={
                           appl.status === "Accepted"

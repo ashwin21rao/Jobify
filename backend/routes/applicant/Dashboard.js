@@ -106,7 +106,7 @@ router.post("/outstandingapplications", (req, res) => {
     },
   })
     .then((jobs) => {
-      res.send(String(jobs.length));
+      res.json({ outstanding_applications: jobs.length });
     })
     .catch((err) => console.log(err));
 });

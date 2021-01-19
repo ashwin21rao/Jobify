@@ -6,6 +6,7 @@ import { Container, Row, Col } from "react-bootstrap/";
 import MainHeading from "../../components/MainHeading";
 import ApplyModalWindow from "../../components/ApplyModalWindow";
 import formatDate from "../../components/FormatDate";
+import RoundNumber from "../../components/RoundNumber";
 import DismissibleAlert from "../../components/Alert";
 import Fuse from "fuse.js";
 
@@ -26,6 +27,7 @@ class ApplicantDashboard extends Component {
         min_salary: "",
         max_salary: "",
         search_string: "",
+        show_applied: true,
       },
       can_apply: true,
     };
@@ -42,6 +44,7 @@ class ApplicantDashboard extends Component {
     this.filter = this.filter.bind(this);
     this.sortJobsBy = this.sortJobsBy.bind(this);
     this.sortJobsType = this.sortJobsType.bind(this);
+    this.filterAppliedJobs = this.filterAppliedJobs.bind(this);
   }
 
   componentDidMount() {
@@ -95,7 +98,7 @@ class ApplicantDashboard extends Component {
       })
       .then((res) => {
         this.setState({
-          can_apply: +res.data < 3,
+          can_apply: res.data.outstanding_applications < 10,
         });
       })
       .catch(function (error) {
@@ -122,6 +125,7 @@ class ApplicantDashboard extends Component {
       min_salary,
       max_salary,
       search_string,
+      show_applied,
     } = this.state.filters;
 
     let jobData = this.state.jobData.slice();
@@ -154,12 +158,17 @@ class ApplicantDashboard extends Component {
       const max_salary_cond =
         max_salary === "" ? true : +max_salary >= +job.salary;
 
+      const applied_cond = show_applied
+        ? true
+        : !this.state.jobsApplied.includes(job._id);
+
       return (
         new Date(job.deadline) - Date.now() > 0 &&
         job_type_cond &&
         min_salary_cond &&
         max_salary_cond &&
-        duration_cond
+        duration_cond &&
+        applied_cond
       );
     });
   }
@@ -190,6 +199,16 @@ class ApplicantDashboard extends Component {
           ...this.state.filters.sort_by,
           type: checked ? "Desc" : "Asc",
         },
+      },
+    });
+  }
+
+  filterAppliedJobs(e) {
+    const { checked } = e.target;
+    this.setState({
+      filters: {
+        ...this.state.filters,
+        show_applied: checked,
       },
     });
   }
@@ -304,7 +323,7 @@ class ApplicantDashboard extends Component {
                 </Row>
                 <Row className="mb-1">
                   <Col>
-                    <Form>
+                    <Form className="border-bottom">
                       <Row className="align-items-center">
                         <Col xs={12} sm={6}>
                           <Form.Group controlId="sortBy">
@@ -328,6 +347,25 @@ class ApplicantDashboard extends Component {
                               label="Desc"
                               className="mt-xs-0 mt-sm-4"
                               onChange={this.sortJobsType}
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    </Form>
+                  </Col>
+                </Row>
+                <Row className="mb-1">
+                  <Col>
+                    <Form>
+                      <Row>
+                        <Col xs="auto">
+                          <Form.Group controlId="showApplied">
+                            <Form.Check
+                              custom
+                              label="Show applied jobs"
+                              className="mt-2"
+                              defaultChecked={true}
+                              onChange={this.filterAppliedJobs}
                             />
                           </Form.Group>
                         </Col>
@@ -360,13 +398,15 @@ class ApplicantDashboard extends Component {
                       <td>{obj.title}</td>
                       <td>{obj.recruiter_details.company}</td>
                       <td>{obj.skills.join(", ")}</td>
-                      <td>{obj.rating}</td>
+                      <td>{RoundNumber(obj.rating, 2)}</td>
                       <td>{obj.salary}</td>
                       <td>{formatDate(new Date(obj.deadline), true)}</td>
                       <td>{obj.job_type}</td>
                       <td>
                         {+obj.duration === 0
                           ? "Indefinite"
+                          : +obj.duration === 1
+                          ? `${obj.duration} month`
                           : `${obj.duration} months`}
                       </td>
                       <td>

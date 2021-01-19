@@ -65,4 +65,63 @@ router.post("/load", (req, res) => {
     .catch((err) => console.log(err));
 });
 
+router.post("/rate", (req, res) => {
+  const { job_id, applicant_id, rating } = req.body;
+
+  Job.updateOne(
+    {
+      _id: mongoose.Types.ObjectId(job_id),
+      "job_applicants.applicant_id": applicant_id,
+    },
+    {
+      $set: {
+        "job_applicants.$.job_rating": rating,
+      },
+    },
+    (err, result) => {
+      if (err) throw err;
+
+      // find average of all ratings for that job
+      Job.aggregate([
+        { $match: { _id: mongoose.Types.ObjectId(job_id) } },
+        {
+          $set: {
+            job_applicants: {
+              $filter: {
+                input: "$job_applicants",
+                as: "item",
+                cond: { $ne: ["$$item.job_rating", 0] },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            avg_rating: { $avg: "$job_applicants.job_rating" },
+            _id: false,
+          },
+        },
+      ])
+        .then((arr) => {
+          // update job rating
+          Job.updateOne(
+            {
+              _id: mongoose.Types.ObjectId(job_id),
+            },
+            {
+              $set: {
+                rating: arr[0].avg_rating,
+              },
+            },
+            (err, result) => {
+              if (err) throw err;
+              res.json({ rating: arr[0].avg_rating });
+            }
+          );
+        })
+        .catch((err) => console.log(err));
+    }
+  );
+});
+
 module.exports = router;

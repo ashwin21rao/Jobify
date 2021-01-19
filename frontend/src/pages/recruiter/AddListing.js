@@ -6,6 +6,7 @@ import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
 import Table from "react-bootstrap/Table";
 import FormatDate from "../../components/FormatDate";
+import RoundNumber from "../../components/RoundNumber";
 import {
   MuiPickersUtilsProvider,
   KeyboardDateTimePicker,
@@ -242,7 +243,9 @@ class AddListing extends Component {
                     <Form.Group controlId="rating">
                       <Form.Label>Rating</Form.Label>
                       <Form.Control
-                        defaultValue={jobData?.rating ?? 0}
+                        defaultValue={
+                          jobData ? RoundNumber(jobData.rating, 2) : 0
+                        }
                         disabled
                       />
                     </Form.Group>

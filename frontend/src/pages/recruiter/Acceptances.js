@@ -6,6 +6,7 @@ import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
 import ModalWindow from "../../components/ModalWindow";
 import FormatDate from "../../components/FormatDate";
+import RoundNumber from "../../components/RoundNumber";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
@@ -181,7 +182,12 @@ class AcceptedEmployees extends Component {
                         )}
                       </td>
                       <td>{appl.job_type}</td>
-                      <td>{appl.applicant_details.personal_data.rating}</td>
+                      <td>
+                        {RoundNumber(
+                          appl.applicant_details.personal_data.rating,
+                          2
+                        )}
+                      </td>
                       <td>
                         <ModalWindow
                           formId="modalForm"

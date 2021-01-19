@@ -5,6 +5,7 @@ import { Container, Row, Col } from "react-bootstrap/";
 import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
 import FormatDate from "../../components/FormatDate";
+import RoundNumber from "../../components/RoundNumber";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
@@ -135,11 +136,13 @@ class RecruiterDashboard extends Component {
                       <td>
                         {+obj.duration === 0
                           ? "Indefinite"
+                          : +obj.duration === 1
+                          ? `${obj.duration} month`
                           : `${obj.duration} months`}
                       </td>
                       <td>{obj.skills.join(", ")}</td>
                       <td>{obj.salary}</td>
-                      <td>{obj.rating}</td>
+                      <td>{RoundNumber(obj.rating, 2)}</td>
                       <td>
                         <Button
                           variant="outline-info"

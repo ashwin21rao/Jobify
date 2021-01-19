@@ -2,10 +2,10 @@ import React, { Component } from "react";
 import Table from "react-bootstrap/Table";
 import ApplicantNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
-import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
-import ModalWindow from "../../components/ModalWindow";
+import RateModalWindow from "../../components/RateModalWindow";
 import FormatDate from "../../components/FormatDate";
+import RoundNumber from "../../components/RoundNumber";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
@@ -18,6 +18,8 @@ class MyApplications extends Component {
       authorized: props.auth.user.userType === "applicant",
       fetching: true,
     };
+
+    this.rateJob = this.rateJob.bind(this);
   }
 
   componentDidMount() {
@@ -31,6 +33,30 @@ class MyApplications extends Component {
         this.setState({
           applicationData: res.data,
           fetching: false,
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  rateJob(rating, jobData) {
+    // console.log(jobData);
+
+    axios
+      .post("/applicant/applications/rate", {
+        applicant_id: jobData.applicant_details.applicant_id,
+        job_id: jobData._id,
+        rating,
+      })
+      .then((res) => {
+        const newData = [...this.state.applicationData];
+        const job = newData.find((obj) => obj._id === jobData._id);
+        job.rating = res.data.rating;
+
+        job.applicant_details.job_rating = rating;
+        this.setState({
+          applicationData: newData,
         });
       })
       .catch(function (error) {
@@ -82,10 +108,16 @@ class MyApplications extends Component {
                       <td>{obj.title}</td>
                       <td>{obj.recruiter_details.name}</td>
                       <td>{obj.recruiter_details.company}</td>
-                      <td>{obj.rating}</td>
+                      <td>{RoundNumber(obj.rating, 2)}</td>
                       <td>{obj.salary}</td>
                       <td>{obj.job_type}</td>
-                      <td>{`${obj.duration} months`}</td>
+                      <td>
+                        {+obj.duration === 0
+                          ? "Indefinite"
+                          : +obj.duration === 1
+                          ? `${obj.duration} month`
+                          : `${obj.duration} months`}
+                      </td>
                       <td
                         className={
                           obj.applicant_details.status === "Accepted"
@@ -107,25 +139,10 @@ class MyApplications extends Component {
                           : ""}
                       </td>
                       <td>
-                        <ModalWindow
-                          formId="modalForm"
-                          title="Rating"
-                          buttonType={{
-                            label: "Rate",
-                            variant: "outline-info",
-                          }}
-                        >
-                          <Form id="modalForm">
-                            <Form.Group controlId="rating">
-                              <Form.Control
-                                type="number"
-                                min="0"
-                                max="5"
-                                required
-                              />
-                            </Form.Group>
-                          </Form>
-                        </ModalWindow>
+                        <RateModalWindow
+                          jobData={obj}
+                          onSubmit={this.rateJob}
+                        />
                       </td>
                     </tr>
                   ))}

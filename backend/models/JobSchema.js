@@ -41,7 +41,7 @@ const JobSchema = new Schema({
     required: true,
   },
   duration: {
-    type: String,
+    type: Number,
     required: true,
   },
   salary: {
@@ -78,6 +78,18 @@ const JobSchema = new Schema({
       },
       date_of_joining: {
         type: Date,
+      },
+      job_rating: {
+        type: Number,
+        min: 0,
+        max: 5,
+        default: 0,
+      },
+      applicant_rating: {
+        type: Number,
+        min: 0,
+        max: 5,
+        default: 0,
       },
       _id: false,
     },

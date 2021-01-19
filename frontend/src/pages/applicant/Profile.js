@@ -5,6 +5,7 @@ import { Container, Row, Col } from "react-bootstrap/";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import MainHeading from "../../components/MainHeading";
+import RoundNumber from "../../components/RoundNumber";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
@@ -168,7 +169,10 @@ class ApplicantProfile extends Component {
                   <Col sm={12} md={4}>
                     <Form.Group controlId="detailsRating">
                       <Form.Label>Rating</Form.Label>
-                      <Form.Control value={profileData.rating} readOnly />
+                      <Form.Control
+                        value={RoundNumber(profileData.rating, 2)}
+                        readOnly
+                      />
                     </Form.Group>
                   </Col>
                 </Row>
