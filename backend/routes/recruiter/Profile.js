@@ -21,20 +21,34 @@ router.post("/load", (req, res) => {
 
 // Update profile
 router.post("/update", (req, res) => {
-  const { user_id, phone_number, company, bio } = req.body;
-  Recruiter.findOneAndUpdate(
-    { user_id },
+  const { user_id, name, phone_number, company, bio } = req.body;
+
+  User.updateOne(
+    { _id: mongoose.Types.ObjectId(user_id) },
     {
-      phone_number,
-      company,
-      bio,
+      $set: {
+        name,
+      },
     },
-    {
-      new: true,
-    },
-    (err, doc) => {
+    (err, result) => {
       if (err) throw err;
-      res.json(doc);
+
+      Recruiter.findOneAndUpdate(
+        { user_id },
+        {
+          name,
+          phone_number,
+          company,
+          bio,
+        },
+        {
+          new: true,
+        },
+        (err, doc) => {
+          if (err) throw err;
+          res.json(doc);
+        }
+      );
     }
   );
 });

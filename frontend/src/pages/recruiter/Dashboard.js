@@ -3,6 +3,7 @@ import Table from "react-bootstrap/Table";
 import RecruiterNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
 import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
 import FormatDate from "../../components/FormatDate";
 import RoundNumber from "../../components/RoundNumber";
@@ -17,9 +18,14 @@ class RecruiterDashboard extends Component {
     this.state = {
       authorized: props.auth.user.userType === "recruiter",
       fetching: true,
+      filters: {
+        show_full: false,
+      },
     };
     this.passDataAndNavigate = this.passDataAndNavigate.bind(this);
     this.removeJob = this.removeJob.bind(this);
+    this.filterListings = this.filterListings.bind(this);
+    this.filterFullListings = this.filterFullListings.bind(this);
   }
 
   passDataAndNavigate(e, path, data) {
@@ -45,19 +51,36 @@ class RecruiterDashboard extends Component {
   removeJob(e, jobData) {
     e.stopPropagation();
     const { user } = this.props.auth;
-    console.log(user);
     axios
       .post("/recruiter/dashboard/removejob", {
         user_id: user.id,
         job_id: jobData._id,
       })
       .then((res) => {
-        console.log(res.data);
         this.setState({ jobData: res.data, fetching: false });
       })
       .catch(function (error) {
         console.log(error);
       });
+  }
+
+  // FRONTEND FILTERING
+  filterListings(e) {
+    const { show_full } = this.state.filters;
+    return this.state.jobData.filter((job) => {
+      const full_cond = show_full ? true : job.positions_available > 0;
+      return full_cond;
+    });
+  }
+
+  filterFullListings(e) {
+    const { checked } = e.target;
+    this.setState({
+      filters: {
+        ...this.state.filters,
+        show_full: checked,
+      },
+    });
   }
 
   render() {
@@ -94,6 +117,25 @@ class RecruiterDashboard extends Component {
               </Button>
             </Col>
           </Row>
+          <Row className="mb-1">
+            <Col>
+              <Form>
+                <Row>
+                  <Col xs="auto">
+                    <Form.Group controlId="showFullListings">
+                      <Form.Check
+                        custom
+                        label="Show filled listings"
+                        className="mt-2"
+                        defaultChecked={false}
+                        onChange={this.filterFullListings}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+              </Form>
+            </Col>
+          </Row>
           <Row>
             <Col>
               <Table striped bordered hover responsive="lg">
@@ -114,7 +156,7 @@ class RecruiterDashboard extends Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {this.state.jobData.map((obj, i) => (
+                  {this.filterListings().map((obj, i) => (
                     <tr
                       key={i}
                       onClick={(e) =>
@@ -131,7 +173,7 @@ class RecruiterDashboard extends Component {
                       <td>{FormatDate(new Date(obj.date_of_posting))}</td>
                       <td>{FormatDate(new Date(obj.deadline), true)}</td>
                       <td>{obj.max_applicants}</td>
-                      <td>{obj.positions_available}</td>
+                      <td>{obj.positions_available || "Filled"}</td>
                       <td>{obj.job_type}</td>
                       <td>
                         {+obj.duration === 0
@@ -148,6 +190,7 @@ class RecruiterDashboard extends Component {
                           variant="outline-info"
                           type="submit"
                           className="mr-0 mr-lg-2 mb-2 mb-lg-0"
+                          disabled={obj.positions_available === 0}
                           onClick={(e) =>
                             this.passDataAndNavigate(
                               e,

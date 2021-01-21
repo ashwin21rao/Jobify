@@ -17,6 +17,38 @@ router.post("/load", (req, res) => {
     .catch((err) => console.log(err));
 });
 
+// update details
+router.post("/updatedetails", (req, res) => {
+  const { user_id, name } = req.body;
+  User.updateOne(
+    { _id: mongoose.Types.ObjectId(user_id) },
+    {
+      $set: {
+        name,
+      },
+    },
+    (err, result) => {
+      if (err) throw err;
+
+      Applicant.findOneAndUpdate(
+        { user_id },
+        {
+          $set: {
+            name,
+          },
+        },
+        {
+          new: true,
+        },
+        (err, doc) => {
+          if (err) throw err;
+          res.json(doc);
+        }
+      );
+    }
+  );
+});
+
 // Add education
 router.post("/addeducation", (req, res) => {
   const { user_id, institute_name, start_year, end_year } = req.body;

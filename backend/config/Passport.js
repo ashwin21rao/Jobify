@@ -13,13 +13,14 @@ const opts = {
 // JWT authentication
 module.exports = (passport) => {
   passport.use(
+    "jwt",
     new JwtStrategy(opts, (jwt_payload, done) => {
       UserSchema.findById(jwt_payload.id)
         .then((user) => {
           if (user) {
-            return done(null, user); // return corresponding user
+            done(null, user); // return corresponding user
           }
-          return done(null, false); // no such user
+          done(null, false); // no such user
         })
         .catch((err) => console.log(err));
     })

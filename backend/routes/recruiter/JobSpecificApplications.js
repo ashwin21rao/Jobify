@@ -91,7 +91,7 @@ router.post("/changestatus", (req, res) => {
 router.post("/accept", (req, res) => {
   const { job_id, applicant_id } = req.body;
 
-  /// set all other job applications to rejected (which are not accepted)
+  /// set all other unaccepted job applications of applicant to rejected
   Job.updateMany(
     {
       _id: { $ne: mongoose.Types.ObjectId(job_id) },
@@ -135,6 +135,31 @@ router.post("/accept", (req, res) => {
           res.json(appl);
         }
       );
+    }
+  );
+});
+
+// reject all unaccepted applications after all positions are filled up
+router.post("/rejectall", (req, res) => {
+  const { job_id } = req.body;
+
+  /// set all other job applications to rejected (which are not accepted)
+  Job.findOneAndUpdate(
+    {
+      _id: mongoose.Types.ObjectId(job_id),
+    },
+    {
+      $set: {
+        "job_applicants.$[elem].status": "Rejected",
+      },
+    },
+    {
+      new: true,
+      arrayFilters: [{ "elem.status": { $nin: ["Accepted", "Rejected"] } }],
+    },
+    (err, job) => {
+      if (err) throw err;
+      res.json(job);
     }
   );
 });

@@ -4,7 +4,7 @@ import RecruiterNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
 import Form from "react-bootstrap/Form";
 import MainHeading from "../../components/MainHeading";
-import ModalWindow from "../../components/ModalWindow";
+import { RateEmployeeModalWindow } from "../../components/ModalWindow";
 import FormatDate from "../../components/FormatDate";
 import RoundNumber from "../../components/RoundNumber";
 
@@ -26,6 +26,8 @@ class AcceptedEmployees extends Component {
     this.filterApplicants = this.filterApplicants.bind(this);
     this.sortApplicantsBy = this.sortApplicantsBy.bind(this);
     this.sortApplicantsType = this.sortApplicantsType.bind(this);
+
+    this.rateApplicant = this.rateApplicant.bind(this);
   }
 
   componentDidMount() {
@@ -39,6 +41,44 @@ class AcceptedEmployees extends Component {
         this.setState({
           applicantData: res.data,
           fetching: false,
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  rateApplicant(rating, applicantData) {
+    axios
+      .post("/recruiter/acceptances/rate", {
+        applicant_id: applicantData.applicant_details.applicant_id,
+        job_id: applicantData._id,
+        rating,
+      })
+      .then((res) => {
+        const newData = [...this.state.applicantData];
+
+        // update job specific applicant rating
+        newData.find(
+          (obj) =>
+            obj._id === applicantData._id && // match job
+            obj.applicant_details.applicant_id ===
+              applicantData.applicant_details.applicant_id // match applicant
+        ).applicant_details.applicant_rating = +rating;
+
+        // update overall applicant rating
+        newData
+          .filter(
+            (obj) =>
+              obj.applicant_details.applicant_id ===
+              applicantData.applicant_details.applicant_id
+          )
+          .forEach((obj) => {
+            obj.applicant_details.personal_data.rating = res.data.rating;
+          });
+
+        this.setState({
+          applicantData: newData,
         });
       })
       .catch(function (error) {
@@ -189,25 +229,10 @@ class AcceptedEmployees extends Component {
                         )}
                       </td>
                       <td>
-                        <ModalWindow
-                          formId="modalForm"
-                          title="Rating"
-                          buttonType={{
-                            label: "Rate",
-                            variant: "outline-info",
-                          }}
-                        >
-                          <Form id="modalForm">
-                            <Form.Group controlId="rating">
-                              <Form.Control
-                                type="number"
-                                min="0"
-                                max="5"
-                                required
-                              />
-                            </Form.Group>
-                          </Form>
-                        </ModalWindow>
+                        <RateEmployeeModalWindow
+                          applicantData={appl}
+                          onSubmit={this.rateApplicant}
+                        />
                       </td>
                     </tr>
                   ))}

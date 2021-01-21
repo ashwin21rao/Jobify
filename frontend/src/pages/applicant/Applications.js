@@ -3,7 +3,7 @@ import Table from "react-bootstrap/Table";
 import ApplicantNavbar from "./Navbar";
 import { Container, Row, Col } from "react-bootstrap/";
 import MainHeading from "../../components/MainHeading";
-import RateModalWindow from "../../components/RateModalWindow";
+import { RateJobModalWindow } from "../../components/ModalWindow";
 import FormatDate from "../../components/FormatDate";
 import RoundNumber from "../../components/RoundNumber";
 
@@ -41,8 +41,6 @@ class MyApplications extends Component {
   }
 
   rateJob(rating, jobData) {
-    // console.log(jobData);
-
     axios
       .post("/applicant/applications/rate", {
         applicant_id: jobData.applicant_details.applicant_id,
@@ -54,7 +52,7 @@ class MyApplications extends Component {
         const job = newData.find((obj) => obj._id === jobData._id);
         job.rating = res.data.rating;
 
-        job.applicant_details.job_rating = rating;
+        job.applicant_details.job_rating = +rating;
         this.setState({
           applicationData: newData,
         });
@@ -139,7 +137,7 @@ class MyApplications extends Component {
                           : ""}
                       </td>
                       <td>
-                        <RateModalWindow
+                        <RateJobModalWindow
                           jobData={obj}
                           onSubmit={this.rateJob}
                         />

@@ -4,7 +4,7 @@ import ApplicantNavbar from "./Navbar";
 import Form from "react-bootstrap/Form";
 import { Container, Row, Col } from "react-bootstrap/";
 import MainHeading from "../../components/MainHeading";
-import ApplyModalWindow from "../../components/ApplyModalWindow";
+import { ApplyModalWindow } from "../../components/ModalWindow";
 import formatDate from "../../components/FormatDate";
 import RoundNumber from "../../components/RoundNumber";
 import DismissibleAlert from "../../components/Alert";
@@ -30,6 +30,7 @@ class ApplicantDashboard extends Component {
         show_applied: true,
       },
       can_apply: true,
+      accepted: false,
     };
     this.applyToJob = this.applyToJob.bind(this);
 
@@ -39,6 +40,9 @@ class ApplicantDashboard extends Component {
     this.alertIfTooManyApplications = this.alertIfTooManyApplications.bind(
       this
     );
+
+    this.checkIfAccepted = this.checkIfAccepted.bind(this);
+    this.alertIfAccepted = this.alertIfAccepted.bind(this);
 
     this.filterjobs = this.filterJobs.bind(this);
     this.filter = this.filter.bind(this);
@@ -62,6 +66,7 @@ class ApplicantDashboard extends Component {
           fetching: false,
         });
         this.checkOutstandingApplications();
+        this.checkIfAccepted();
       })
       .catch(function (error) {
         console.log(error);
@@ -116,6 +121,32 @@ class ApplicantDashboard extends Component {
     }
   }
 
+  checkIfAccepted() {
+    const { user } = this.props.auth;
+    axios
+      .post("/applicant/dashboard/checkifaccepted", {
+        user_id: user.id,
+      })
+      .then((res) => {
+        this.setState({
+          accepted: res.data.accepted,
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
+  alertIfAccepted() {
+    if (this.state.accepted) {
+      return (
+        <DismissibleAlert variant="success" dismissible={false}>
+          You have already been accepted into a job!
+        </DismissibleAlert>
+      );
+    }
+  }
+
   // FRONTEND FILTERING, SORTING, SEARCHING
   filterJobs() {
     const {
@@ -148,9 +179,7 @@ class ApplicantDashboard extends Component {
         job_type === "All" ? true : job.job_type === job_type;
 
       const duration_cond =
-        duration === "All"
-          ? true
-          : +job.duration < +duration && +job.duration > 0;
+        duration === "All" ? true : +job.duration < +duration;
 
       const min_salary_cond =
         min_salary === "" ? true : +min_salary <= +job.salary;
@@ -231,6 +260,7 @@ class ApplicantDashboard extends Component {
             <Col>
               <MainHeading heading="Job Listings" />
               {this.alertIfTooManyApplications()}
+              {this.alertIfAccepted()}
             </Col>
           </Row>
           <Row className="mb-3">
@@ -412,7 +442,9 @@ class ApplicantDashboard extends Component {
                       <td>
                         <ApplyModalWindow
                           jobData={obj}
-                          can_apply={this.state.can_apply}
+                          can_apply={
+                            this.state.can_apply && !this.state.accepted
+                          }
                           applied={this.state.jobsApplied.includes(obj._id)}
                           onSubmit={this.applyToJob}
                         />

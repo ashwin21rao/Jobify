@@ -55,7 +55,6 @@ router.post("/load", (req, res) => {
         title: 1,
         job_type: 1,
         applicant_details: "$job_applicants",
-        _id: 0,
       },
     },
     {
@@ -71,6 +70,88 @@ router.post("/load", (req, res) => {
       return res.json(jobs);
     })
     .catch((err) => console.log(err));
+});
+
+router.post("/rate", (req, res) => {
+  const { job_id, applicant_id, rating } = req.body;
+
+  Job.updateOne(
+    {
+      _id: mongoose.Types.ObjectId(job_id),
+      "job_applicants.applicant_id": applicant_id,
+    },
+    {
+      $set: {
+        "job_applicants.$.applicant_rating": rating,
+      },
+    },
+    (err, result) => {
+      if (err) throw err;
+
+      // find average of all ratings for that applicant
+      Job.aggregate([
+        {
+          $match: {
+            job_applicants: {
+              $elemMatch: {
+                applicant_id,
+                status: "Accepted",
+                applicant_rating: { $ne: 0 },
+              },
+            },
+          },
+        },
+        {
+          $set: {
+            job_applicants: {
+              $filter: {
+                input: "$job_applicants",
+                as: "item",
+                cond: { $eq: ["$$item.applicant_id", applicant_id] },
+              },
+            },
+          },
+        },
+        {
+          $set: {
+            job_applicants: {
+              $arrayElemAt: ["$job_applicants", 0],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "",
+            avg_rating: { $avg: "$job_applicants.applicant_rating" },
+          },
+        },
+        {
+          $project: {
+            avg_rating: "$avg_rating",
+            _id: false,
+          },
+        },
+      ])
+        .then((arr) => {
+          // update applicant rating
+          Applicant.updateOne(
+            {
+              _id: mongoose.Types.ObjectId(applicant_id),
+            },
+            {
+              $set: {
+                rating: arr[0].avg_rating,
+              },
+            },
+            (err, result) => {
+              if (err) throw err;
+              res.json({ rating: arr[0].avg_rating });
+            }
+          );
+        })
+        .catch((err) => console.log(err));
+    }
+  );
 });
 
 module.exports = router;

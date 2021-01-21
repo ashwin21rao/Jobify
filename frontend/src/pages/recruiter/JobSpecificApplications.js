@@ -9,6 +9,7 @@ import MainHeading from "../../components/MainHeading";
 import FormatDate from "../../components/FormatDate";
 import RoundNumber from "../../components/RoundNumber";
 import DismissibleAlert from "../../components/Alert";
+import { ShowSOPModalWindow } from "../../components/ModalWindow";
 
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
@@ -32,6 +33,7 @@ class JobSpecificApplications extends Component {
     this.sortApplicantsType = this.sortApplicantsType.bind(this);
 
     this.alertIfFull = this.alertIfFull.bind(this);
+    this.rejectAllIfFull = this.rejectAllIfFull.bind(this);
   }
 
   componentDidMount() {
@@ -48,6 +50,7 @@ class JobSpecificApplications extends Component {
             fetching: false,
             jobData: this.props.location.jobData,
           });
+          this.rejectAllIfFull();
         })
         .catch(function (error) {
           console.log(error);
@@ -135,10 +138,36 @@ class JobSpecificApplications extends Component {
           }),
           jobData: res.data,
         }));
+        if (newStatus === "Accepted") this.rejectAllIfFull();
       })
       .catch(function (error) {
         console.log(error);
       });
+  }
+
+  rejectAllIfFull() {
+    const { jobData } = this.state;
+
+    if (jobData.positions_available === 0) {
+      axios
+        .post("/recruiter/applications/rejectall", {
+          job_id: jobData._id,
+        })
+        .then((res) => {
+          console.log(res);
+          this.setState((state) => ({
+            applicantData: state.applicantData.map((obj) => {
+              if (obj.status !== "Accepted" && obj.status !== "Rejected")
+                return { ...obj, status: "Rejected" };
+              else return obj;
+            }),
+            jobData: res.data,
+          }));
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    }
   }
 
   // FRONTEND FILTERING, SORTING, SEARCHING
@@ -284,7 +313,9 @@ class JobSpecificApplications extends Component {
                         )}
                       </td>
                       <td>{FormatDate(new Date(appl.date_of_application))}</td>
-                      <td>{appl.sop}</td>
+                      <td>
+                        <ShowSOPModalWindow sop={appl.sop} />
+                      </td>
                       <td>{RoundNumber(appl.personal_data.rating, 2)}</td>
                       <td
                         className={

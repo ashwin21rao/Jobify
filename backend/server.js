@@ -27,11 +27,11 @@ mongoose
 // mongoose settings
 mongoose.set("useFindAndModify", false);
 
-// Passport middleware
-app.use(passport.initialize());
-
 // Passport config
 require("./config/Passport")(passport);
+
+// Passport middleware
+app.use(passport.initialize());
 
 // routes
 app.use("/users", require("./routes/Users"));

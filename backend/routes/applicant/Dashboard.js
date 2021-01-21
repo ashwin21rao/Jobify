@@ -111,4 +111,21 @@ router.post("/outstandingapplications", (req, res) => {
     .catch((err) => console.log(err));
 });
 
+router.post("/checkifaccepted", (req, res) => {
+  const { user_id } = req.body;
+
+  Job.find({
+    job_applicants: {
+      $elemMatch: {
+        user_id,
+        status: "Accepted",
+      },
+    },
+  })
+    .then((jobs) => {
+      res.json({ accepted: jobs.length > 0 });
+    })
+    .catch((err) => console.log(err));
+});
+
 module.exports = router;
